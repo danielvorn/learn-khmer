@@ -244,7 +244,7 @@
     transition: background 0.2s, transform 0.15s;
   }
   .play-btn:hover { background: rgba(200,169,110,0.2); }
-  .play-btn:active { transform: scale(0.95); }
+  .play-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
   .play-btn.pulse { animation: btnpulse 0.5s ease; }
   @keyframes btnpulse {
     0%,100% { transform: scale(1); }
@@ -413,7 +413,167 @@
     z-index: 1;
   }
 
-  /* ── MOBILE ── */
+  /* LISTEN */
+  .listen-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    padding-top: 20px;
+  }
+
+  .listen-hint {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .listen-transcription {
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .listen-card {
+    display: none;
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 48px 20px 20px;
+    position: relative;
+    animation: fadeUp 0.3s ease both;
+  }
+  .listen-card.visible { display: block; }
+
+  .listen-transcription-text {
+    font-family: 'Noto Serif Khmer', serif;
+    font-size: 24px;
+    line-height: 1.7;
+    color: var(--text);
+    display: block;
+    text-align: left;
+  }
+
+  .listen-copy-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--muted);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+  }
+  .listen-copy-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+  .listen-copy-btn.copied { color: var(--correct); border-color: var(--correct); }
+
+  .listen-reveal {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .listen-reveal:hover { color: var(--text); }
+  .listen-reveal.hidden { display: none; }
+
+  .listen-top-bar {
+    height: 2px;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 0 2px 2px 0;
+    transition: width 0.1s linear;
+    margin-bottom: 28px;
+  }
+  .listen-top-bar.loading {
+    animation: topbar 1.4s ease-in-out infinite;
+  }
+  @keyframes topbar {
+    0%   { width: 0%; margin-left: 0%; }
+    50%  { width: 70%; margin-left: 15%; }
+    100% { width: 0%; margin-left: 100%; }
+  }
+
+  .listen-play-wrap {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .listen-spinner {
+    position: absolute;
+    inset: 0;
+    width: 80px;
+    height: 80px;
+    transform: rotate(-90deg);
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+
+  .listen-spinner.active { opacity: 1; }
+
+  .listen-spinner circle {
+    stroke-dasharray: 226;
+    stroke-dashoffset: 226;
+    animation: none;
+    transform-origin: center;
+  }
+
+  .listen-spinner.active circle {
+    animation: spin-arc 1s ease-in-out infinite;
+  }
+
+  @keyframes spin-arc {
+    0%   { stroke-dashoffset: 226; }
+    50%  { stroke-dashoffset: 56; }
+    100% { stroke-dashoffset: 226; }
+  }
+
+
+  .listen-error {
+    font-size: 10px;
+    color: var(--wrong);
+    letter-spacing: 0.1em;
+    min-height: 16px;
+  }
+
+  .listen-next {
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 10px 32px;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, background 0.2s;
+  }
+  .listen-next.visible { opacity: 1; pointer-events: auto; }
+  .listen-next:hover { background: var(--accent-dim); }
+
+  
   @media (max-width: 600px) {
     body {
       padding: 32px 16px 60px;
@@ -507,6 +667,7 @@
 <div class="tabs">
   <button class="tab-btn active" id="tab-practice" onclick="switchTab('practice', this)">Practice</button>
   <button class="tab-btn" id="tab-quiz" onclick="switchTab('quiz', this)">Quiz</button>
+  <button class="tab-btn" id="tab-listen" onclick="switchTab('listen', this)">Listen</button>
 </div>
 
 <!-- PRACTICE -->
@@ -548,6 +709,26 @@
     <div class="results-score" id="res-score"></div>
     <div class="results-detail" id="res-detail"></div>
     <button class="restart-btn" onclick="startQuiz()">Try Again</button>
+  </div>
+</div>
+
+<!-- LISTEN -->
+<div class="panel" id="panel-listen">
+  <div class="listen-top-bar" id="listen-top-bar"></div>
+  <div class="listen-wrap">
+    <div class="listen-hint" id="listen-hint">tap to hear a random sentence</div>
+      <button class="play-btn" id="listen-play-btn" onclick="replayListen()">▶</button>
+    <div class="listen-transcription" id="listen-transcription">
+      <div class="listen-card" id="listen-card">
+        <span class="listen-transcription-text" id="listen-transcription-text"></span>
+        <button class="listen-copy-btn" id="listen-copy-btn" onclick="copyTranscription()" title="Copy">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+      <span class="listen-reveal hidden" id="listen-reveal"></span>
+    </div>
+    <div class="listen-error" id="listen-error"></div>
+    <button class="listen-next" id="listen-next" onclick="fetchAndPlay()">Next →</button>
   </div>
 </div>
 
@@ -698,15 +879,122 @@ function toggleScramble() {
 }
 
 
+// ── LISTEN ──
+let listenAudio = null;
+let currentListenUrl = null;
+let listenCache = [];
+let isFetchingCache = false;
+
+async function prefetchListenCache() {
+  if (isFetchingCache || listenCache.length > 20) return;
+  isFetchingCache = true;
+  try {
+    const offset = Math.floor(Math.random() * 14843);
+    const res = await fetch(`https://datasets-server.huggingface.co/rows?dataset=seanghay/km-speech-corpus&config=default&split=train&offset=${offset}&length=100`);
+    const data = await res.json();
+    if (!res.ok) throw new Error('API error');
+    const items = data.rows.map(r => ({
+      audioUrl: r.row.audio[0].src,
+      transcription: r.row.transcription,
+    }));
+    listenCache.push(...items);
+  } catch (e) {}
+  isFetchingCache = false;
+}
+
+function replayListen() {
+  if (!currentListenUrl) { fetchAndPlay(); return; }
+  if (listenAudio) { listenAudio.pause(); listenAudio.currentTime = 0; }
+  listenAudio = new Audio(currentListenUrl);
+  listenAudio.play().catch(() => {});
+  document.getElementById('listen-play-btn').classList.add('pulse');
+}
+
+async function fetchAndPlay() {
+  const btn = document.getElementById('listen-play-btn');
+  const hint = document.getElementById('listen-hint');
+  const error = document.getElementById('listen-error');
+  const text = document.getElementById('listen-transcription-text');
+  const next = document.getElementById('listen-next');
+
+  const bar = document.getElementById('listen-top-bar');
+  const spinner = null; // removed
+
+  // reset
+  document.getElementById('listen-card').classList.remove('visible');
+  next.classList.remove('visible');
+  error.textContent = '';
+  hint.textContent = 'loading…';
+  btn.disabled = true;
+  bar.classList.add('loading');
+  if (listenAudio) { listenAudio.pause(); listenAudio = null; }
+
+  // if cache empty, wait for any in-progress fetch or kick off a new one
+  if (listenCache.length === 0) {
+    await prefetchListenCache();
+    // if still fetching in background, poll until done
+    while (isFetchingCache) {
+      await new Promise(r => setTimeout(r, 100));
+    }
+  }
+
+  if (listenCache.length === 0) {
+    hint.textContent = 'tap to hear a random sentence';
+    error.textContent = 'failed to load — check your connection';
+    btn.disabled = false;
+    bar.classList.remove('loading');
+    return;
+  }
+
+  const item = listenCache.shift();
+  currentListenUrl = item.audioUrl;
+  text.textContent = item.transcription;
+  document.getElementById('listen-card').classList.add('visible');
+  hint.textContent = 'tap to replay';
+
+  listenAudio = new Audio(item.audioUrl);
+  listenAudio.play().catch(() => { error.textContent = 'could not play audio'; });
+  listenAudio.addEventListener('ended', () => {
+    next.classList.add('visible');
+  });
+  btn.disabled = false;
+  bar.classList.remove('loading');
+
+  // prefetch more in background when running low
+  if (listenCache.length < 3) prefetchListenCache();
+}
+
+
+function revealTranscription() {
+  document.getElementById('listen-card').classList.add('visible');
+  document.getElementById('listen-reveal').classList.add('hidden');
+}
+
+function copyTranscription() {
+  const text = document.getElementById('listen-transcription-text').textContent;
+  const btn = document.getElementById('listen-copy-btn');
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    }, 2000);
+  });
+}
+
+
 function switchTab(name, btn) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
   btn.classList.add('active');
   if (name === 'quiz') startQuiz();
+  if (name === 'listen') fetchAndPlay();
 }
 
-// ── QUIZ ──
+// kick off cache prefetch immediately on page load
+prefetchListenCache();
 let quizQueue = [];
 let currentQ = 0;
 let correctCount = 0;
