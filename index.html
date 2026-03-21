@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Khmer Consonants</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Khmer:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --surface: #181818;
+    --border: #2a2a2a;
+    --accent: #c8a96e;
+    --accent-dim: rgba(200, 169, 110, 0.12);
+    --text: #e8e0d0;
+    --muted: #666;
+    --series1: #6a9fd8;
+    --series2: #d87a6a;
+    --correct: #5a9e6f;
+    --correct-dim: rgba(90, 158, 111, 0.15);
+    --wrong: #9e5a5a;
+    --wrong-dim: rgba(158, 90, 90, 0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px 80px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .title-label {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-family: 'Noto Serif Khmer', serif;
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+  }
+
+  .divider {
+    width: 40px;
+    height: 1px;
+    background: var(--accent);
+    margin: 20px auto 0;
+    opacity: 0.5;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 10px 28px;
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s;
+  }
+
+  .tab-btn:first-child { border-right: 1px solid var(--border); }
+  .tab-btn.active { color: var(--accent); background: var(--accent-dim); }
+  .tab-btn:hover:not(.active) { color: var(--text); background: #1a1a1a; }
+
+  /* PANELS */
+  .panel { display: none; width: 100%; max-width: 700px; position: relative; z-index: 1; }
+  .panel.active { display: block; }
+
+  /* PRACTICE GRID */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+
+  .card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 20px 12px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .card:hover { border-color: rgba(200,169,110,0.4); background: #1e1e1e; }
+  .card:active { transform: scale(0.97); }
+  .card.playing { border-color: var(--accent); background: var(--accent-dim); }
+  .card[data-series="1"] .khmer { color: var(--series1); }
+  .card[data-series="2"] .khmer { color: var(--series2); }
+  .card.playing .khmer { color: var(--accent) !important; }
+
+  .ripple-el {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--ripple);
+    transform: scale(0);
+    animation: ripple 0.5s ease-out forwards;
+    pointer-events: none;
+  }
+
+  @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+
+  .khmer {
+    font-family: 'Noto Serif Khmer', serif;
+    font-size: 52px;
+    line-height: 1;
+    color: var(--text);
+    transition: color 0.2s;
+  }
+
+  .index {
+    position: absolute;
+    top: 6px; right: 8px;
+    font-size: 8px;
+    color: #333;
+  }
+
+  .wave {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .card.playing .wave { opacity: 1; }
+  .wave span {
+    display: block; width: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+    animation: bar 0.6s ease-in-out infinite alternate;
+  }
+  .wave span:nth-child(1) { height: 4px;  animation-delay: 0s; }
+  .wave span:nth-child(2) { height: 10px; animation-delay: 0.1s; }
+  .wave span:nth-child(3) { height: 7px;  animation-delay: 0.2s; }
+  .wave span:nth-child(4) { height: 12px; animation-delay: 0.05s; }
+  .wave span:nth-child(5) { height: 5px;  animation-delay: 0.15s; }
+
+  @keyframes bar {
+    from { transform: scaleY(0.4); }
+    to   { transform: scaleY(1.4); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* QUIZ */
+  .quiz-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .score-bar {
+    display: flex;
+    gap: 24px;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+  .score-bar span { color: var(--text); }
+  #q-correct { color: var(--correct); }
+  #q-wrong   { color: var(--wrong); }
+
+  .progress-track {
+    width: 100%;
+    max-width: 400px;
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .play-btn {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    border: 1px solid var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 28px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .play-btn:hover { background: rgba(200,169,110,0.2); }
+  .play-btn:active { transform: scale(0.95); }
+  .play-btn.pulse { animation: btnpulse 0.5s ease; }
+  @keyframes btnpulse {
+    0%,100% { transform: scale(1); }
+    50%      { transform: scale(0.91); }
+  }
+
+  .play-hint {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    margin-top: -16px;
+  }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    width: 100%;
+    max-width: 700px;
+  }
+
+  .opt-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Noto Serif Khmer', serif;
+    font-size: 32px;
+    padding: 12px 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    user-select: none;
+  }
+
+  .opt-roman {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .opt-btn:hover:not(:disabled) { border-color: rgba(200,169,110,0.4); background: #1e1e1e; }
+  .opt-btn:active:not(:disabled) { transform: scale(0.97); }
+  .opt-btn:disabled { cursor: default; }
+  .opt-btn.correct { border-color: var(--correct); background: var(--correct-dim); color: var(--correct); }
+  .opt-btn.correct .opt-roman { color: var(--correct); opacity: 0.7; }
+  .opt-btn.wrong   { border-color: var(--wrong);   background: var(--wrong-dim);   color: var(--wrong); }
+  .opt-btn.wrong .opt-roman   { color: var(--wrong); opacity: 0.7; }
+
+  .feedback {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    min-height: 16px;
+  }
+  .feedback.correct { color: var(--correct); }
+  .feedback.wrong   { color: var(--wrong); }
+
+  .next-btn {
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 10px 32px;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, background 0.2s;
+  }
+  .next-btn.visible { opacity: 1; pointer-events: auto; }
+  .next-btn:hover { background: var(--accent-dim); }
+
+  /* RESULTS */
+  .results {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+  }
+  .results.show { display: flex; }
+  .results-score {
+    font-family: 'Noto Serif Khmer', serif;
+    font-size: 72px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .results-label {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .results-detail {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+  .restart-btn {
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 10px 32px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s;
+  }
+  .restart-btn:hover { background: var(--accent-dim); }
+
+  .practice-toolbar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .series-legend {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+  }
+  .series-legend .s1 { color: var(--series1); }
+  .series-legend .s2 { color: var(--series2); }
+
+  .legend-divider {
+    color: #333;
+    user-select: none;
+  }
+
+  .legend-toggle {
+    cursor: pointer;
+    color: var(--muted);
+    transition: color 0.2s;
+    letter-spacing: 0.15em;
+    text-decoration: line-through;
+    text-decoration-color: transparent;
+    transition: color 0.2s, text-decoration-color 0.2s;
+  }
+  .legend-toggle:hover { color: var(--text); }
+  .legend-toggle.active { color: var(--accent); text-decoration-color: var(--accent); }
+
+
+
+  #grid-subs .card { padding-bottom: 32px; }
+  #grid-subs .wave { transform: translateY(16px); }
+
+  footer {
+    margin-top: 60px;
+    font-size: 10px;
+    color: #333;
+    letter-spacing: 0.15em;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 600px) {
+    body {
+      padding: 32px 16px 60px;
+    }
+
+    h1 {
+      font-size: 36px;
+    }
+
+    .tabs {
+      width: 100%;
+      margin-bottom: 28px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 0;
+    }
+
+    .panel {
+      max-width: 100%;
+    }
+
+    /* 2 columns on mobile for practice grid */
+    .grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .card {
+      padding: 14px 6px 12px;
+      gap: 6px;
+    }
+
+    .khmer {
+      font-size: 36px;
+    }
+
+    #grid-subs .card {
+      padding-bottom: 24px;
+    }
+
+    /* toolbar wraps on small screens */
+    .practice-toolbar {
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .series-legend {
+      gap: 14px;
+      flex-wrap: wrap;
+      font-size: 9px;
+    }
+
+    /* quiz options: 2 columns on mobile */
+    .options-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    .opt-btn {
+      font-size: 24px;
+      padding: 10px 4px;
+    }
+
+    .play-btn {
+      width: 64px;
+      height: 64px;
+      font-size: 22px;
+    }
+
+    .quiz-wrap {
+      gap: 20px;
+    }
+
+    .results-score {
+      font-size: 56px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-label">Khmer Alphabet</div>
+  <h1>អក្សរខ្មែរ</h1>
+  <div class="divider"></div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tab-practice" onclick="switchTab('practice', this)">Practice</button>
+  <button class="tab-btn" id="tab-quiz" onclick="switchTab('quiz', this)">Quiz</button>
+</div>
+
+<!-- PRACTICE -->
+<div class="panel active" id="panel-practice">
+  <div class="practice-toolbar">
+    <div class="series-legend">
+      <span class="s1">● Series 1</span>
+      <span class="s2">● Series 2</span>
+      <span class="legend-divider">|</span>
+      <span class="legend-toggle" id="sub-toggle" onclick="toggleSubs()">Subscripts</span>
+      <span class="legend-divider">|</span>
+      <span class="legend-toggle" id="scramble-toggle" onclick="toggleScramble()">Scramble</span>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="grid" id="grid-subs" style="display:none"></div>
+</div>
+
+<!-- QUIZ -->
+<div class="panel" id="panel-quiz">
+  <div class="quiz-wrap" id="quiz-active">
+    <div class="score-bar">
+      <div>Q <span id="q-num">1</span> / <span id="q-total">33</span></div>
+      <div>✓ <span id="q-correct">0</span></div>
+      <div>✗ <span id="q-wrong">0</span></div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="q-progress" style="width:0%"></div>
+    </div>
+    <button class="play-btn" id="play-btn">▶</button>
+    <div class="play-hint">tap to replay</div>
+    <div class="options-grid" id="options-grid"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="next-btn" onclick="nextQuestion()">Next →</button>
+  </div>
+
+  <div class="results" id="quiz-results">
+    <div class="results-label">Quiz Complete</div>
+    <div class="results-score" id="res-score"></div>
+    <div class="results-detail" id="res-detail"></div>
+    <button class="restart-btn" onclick="startQuiz()">Try Again</button>
+  </div>
+</div>
+
+<footer>audio: c-01.wav … c-33.wav</footer>
+
+<script>
+const consonants = [
+  { khmer: 'ក', roman: 'ka',   series: 1, sub: '្ក' },
+  { khmer: 'ខ', roman: 'kha',  series: 1, sub: '្ខ' },
+  { khmer: 'គ', roman: 'ko',   series: 2, sub: '្គ' },
+  { khmer: 'ឃ', roman: 'kho',  series: 2, sub: '្ឃ' },
+  { khmer: 'ង', roman: 'ngo',  series: 2, sub: '្ង' },
+  { khmer: 'ច', roman: 'cha',  series: 1, sub: '្ច' },
+  { khmer: 'ឆ', roman: 'chha', series: 1, sub: '្ឆ' },
+  { khmer: 'ជ', roman: 'cho',  series: 2, sub: '្ជ' },
+  { khmer: 'ឈ', roman: 'chho', series: 2, sub: '្ឈ' },
+  { khmer: 'ញ', roman: 'nyo',  series: 2, sub: '្ញ' },
+  { khmer: 'ដ', roman: 'da',   series: 1, sub: '្ដ' },
+  { khmer: 'ឋ', roman: 'tha',  series: 1, sub: '្ឋ' },
+  { khmer: 'ឌ', roman: 'do',   series: 2, sub: '្ឌ' },
+  { khmer: 'ឍ', roman: 'tho',  series: 2, sub: '្ឍ' },
+  { khmer: 'ណ', roman: 'na',   series: 1, sub: '្ណ' },
+  { khmer: 'ត', roman: 'ta',   series: 1, sub: '្ត' },
+  { khmer: 'ថ', roman: 'tha',  series: 1, sub: '្ថ' },
+  { khmer: 'ទ', roman: 'to',   series: 2, sub: '្ទ' },
+  { khmer: 'ធ', roman: 'tho',  series: 2, sub: '្ធ' },
+  { khmer: 'ន', roman: 'no',   series: 2, sub: '្ន' },
+  { khmer: 'ប', roman: 'ba',   series: 1, sub: '្ប' },
+  { khmer: 'ផ', roman: 'pha',  series: 1, sub: '្ផ' },
+  { khmer: 'ព', roman: 'po',   series: 2, sub: '្ព' },
+  { khmer: 'ភ', roman: 'pho',  series: 2, sub: '្ភ' },
+  { khmer: 'ម', roman: 'mo',   series: 2, sub: '្ម' },
+  { khmer: 'យ', roman: 'yo',   series: 2, sub: '្យ' },
+  { khmer: 'រ', roman: 'ro',   series: 2, sub: '្រ' },
+  { khmer: 'ល', roman: 'lo',   series: 2, sub: '្ល' },
+  { khmer: 'វ', roman: 'vo',   series: 2, sub: '្វ' },
+  { khmer: 'ស', roman: 'sa',   series: 1, sub: '្ស' },
+  { khmer: 'ហ', roman: 'ha',   series: 1, sub: '្ហ' },
+  { khmer: 'ឡ', roman: 'la',   series: 1, sub: null },
+  { khmer: 'អ', roman: 'a',    series: 1, sub: '្អ' },
+];
+
+// ── PRACTICE ──
+const grid = document.getElementById('grid');
+let currentAudio = null;
+let currentCard = null;
+
+consonants.forEach((c, i) => {
+  const num = String(i + 1).padStart(2, '0');
+  const file = `audio/c-${num}.wav`;
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.series = c.series;
+  card.style.animationDelay = `${i * 0.025}s`;
+  card.innerHTML = `
+    <span class="index">${num}</span>
+    <span class="khmer">${c.khmer}</span>
+    <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
+  `;
+  card.addEventListener('click', (e) => {
+    const rect = card.getBoundingClientRect();
+    const rip = document.createElement('div');
+    rip.className = 'ripple-el';
+    const size = Math.max(rect.width, rect.height);
+    rip.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+    card.appendChild(rip);
+    rip.addEventListener('animationend', () => rip.remove());
+    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+    if (currentCard) currentCard.classList.remove('playing');
+    const audio = new Audio(file);
+    currentAudio = audio; currentCard = card;
+    card.classList.add('playing');
+    audio.play().catch(() => card.classList.remove('playing'));
+    audio.addEventListener('ended', () => card.classList.remove('playing'));
+  });
+  grid.appendChild(card);
+});
+
+// ── SUBSCRIPT GRID ──
+const gridSubs = document.getElementById('grid-subs');
+
+consonants.forEach((c, i) => {
+  if (!c.sub) return; // skip ឡ
+  const num = String(i + 1).padStart(2, '0');
+  const file = `audio/c-${num}.wav`;
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.series = c.series;
+  card.style.animationDelay = `${i * 0.025}s`;
+  card.innerHTML = `
+    <span class="index">${num}</span>
+    <span class="khmer">${c.sub}</span>
+    <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
+  `;
+  card.addEventListener('click', (e) => {
+    const rect = card.getBoundingClientRect();
+    const rip = document.createElement('div');
+    rip.className = 'ripple-el';
+    const size = Math.max(rect.width, rect.height);
+    rip.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+    card.appendChild(rip);
+    rip.addEventListener('animationend', () => rip.remove());
+    if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+    if (currentCard) currentCard.classList.remove('playing');
+    const audio = new Audio(file);
+    currentAudio = audio; currentCard = card;
+    card.classList.add('playing');
+    audio.play().catch(() => card.classList.remove('playing'));
+    audio.addEventListener('ended', () => card.classList.remove('playing'));
+  });
+  gridSubs.appendChild(card);
+});
+
+// ── SUBSCRIPT TOGGLE ──
+function toggleSubs() {
+  const baseGrid = document.getElementById('grid');
+  const subGrid = document.getElementById('grid-subs');
+  const btn = document.getElementById('sub-toggle');
+  const showingSubs = subGrid.style.display !== 'none';
+  baseGrid.style.display = showingSubs ? 'grid' : 'none';
+  subGrid.style.display = showingSubs ? 'none' : 'grid';
+  btn.classList.toggle('active', !showingSubs);
+}
+
+
+function toggleScramble() {
+  const btn = document.getElementById('scramble-toggle');
+  const baseGrid = document.getElementById('grid');
+  const subGrid = document.getElementById('grid-subs');
+  const isScrambled = btn.classList.toggle('active');
+
+  [baseGrid, subGrid].forEach(g => {
+    const cards = [...g.children];
+    if (isScrambled) {
+      for (let i = cards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cards[i], cards[j]] = [cards[j], cards[i]];
+      }
+    } else {
+      cards.sort((a, b) => {
+        const ai = parseInt(a.querySelector('.index')?.textContent || 0);
+        const bi = parseInt(b.querySelector('.index')?.textContent || 0);
+        return ai - bi;
+      });
+    }
+    cards.forEach(c => g.appendChild(c));
+  });
+}
+
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'quiz') startQuiz();
+}
+
+// ── QUIZ ──
+let quizQueue = [];
+let currentQ = 0;
+let correctCount = 0;
+let wrongCount = 0;
+let answered = false;
+let quizAudio = null;
+let currentFile = '';
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz() {
+  quizQueue = shuffle(consonants.map((c, i) => ({ ...c, index: i })));
+  currentQ = 0; correctCount = 0; wrongCount = 0;
+  document.getElementById('quiz-results').classList.remove('show');
+  document.getElementById('quiz-active').style.display = 'flex';
+  loadQuestion();
+}
+
+function loadQuestion() {
+  answered = false;
+  const q = quizQueue[currentQ];
+  const num = String(q.index + 1).padStart(2, '0');
+  currentFile = `audio/c-${num}.wav`;
+
+  // reset UI
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('next-btn').classList.remove('visible');
+
+  // update score bar
+  document.getElementById('q-num').textContent = currentQ + 1;
+  document.getElementById('q-total').textContent = quizQueue.length;
+  document.getElementById('q-correct').textContent = correctCount;
+  document.getElementById('q-wrong').textContent = wrongCount;
+  document.getElementById('q-progress').style.width = (currentQ / quizQueue.length * 100) + '%';
+
+  // play button
+  const playBtn = document.getElementById('play-btn');
+  playBtn.onclick = () => replayAudio();
+
+  // auto-play
+  playQuizAudio(currentFile);
+
+  // build all 33 options scrambled
+  const options = shuffle(consonants.map((c, i) => ({ ...c, index: i })));
+
+  const og = document.getElementById('options-grid');
+  og.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.dataset.khmer = opt.khmer;
+    btn.innerHTML = opt.khmer;
+    btn.addEventListener('click', () => handleAnswer(btn, opt, q));
+    og.appendChild(btn);
+  });
+}
+
+function playQuizAudio(file) {
+  if (quizAudio) { quizAudio.pause(); quizAudio.currentTime = 0; }
+  quizAudio = new Audio(file);
+  quizAudio.play().catch(() => {});
+  const btn = document.getElementById('play-btn');
+  btn.classList.remove('pulse');
+  void btn.offsetWidth; // reflow to restart animation
+  btn.classList.add('pulse');
+}
+
+function replayAudio() {
+  playQuizAudio(currentFile);
+}
+
+function handleAnswer(btn, chosen, correct) {
+  if (answered) return;
+  answered = true;
+
+  const isCorrect = chosen.khmer === correct.khmer;
+  const fb = document.getElementById('feedback');
+
+  // lock all buttons and highlight correct
+  document.querySelectorAll('.opt-btn').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.khmer === correct.khmer) b.classList.add('correct');
+  });
+
+  if (isCorrect) {
+    correctCount++;
+    fb.textContent = '✓ correct';
+    fb.className = 'feedback correct';
+  } else {
+    wrongCount++;
+    btn.classList.remove('correct');
+    btn.classList.add('wrong');
+    fb.textContent = `✗  the answer was ${correct.khmer}`;
+    fb.className = 'feedback wrong';
+  }
+
+  document.getElementById('q-correct').textContent = correctCount;
+  document.getElementById('q-wrong').textContent = wrongCount;
+
+  // auto-advance after short delay
+  const delay = isCorrect ? 800 : 1600;
+  setTimeout(() => nextQuestion(), delay);
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= quizQueue.length) {
+    showResults();
+  } else {
+    loadQuestion();
+  }
+}
+
+function showResults() {
+  document.getElementById('quiz-active').style.display = 'none';
+  document.getElementById('quiz-results').classList.add('show');
+  const pct = Math.round(correctCount / quizQueue.length * 100);
+  document.getElementById('res-score').textContent = pct + '%';
+  document.getElementById('res-detail').textContent =
+    `${correctCount} correct · ${wrongCount} wrong · ${quizQueue.length} total`;
+}
+</script>
+</body>
+</html>
