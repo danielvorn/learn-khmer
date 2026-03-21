@@ -716,7 +716,7 @@
 <div class="panel" id="panel-listen">
   <div class="listen-top-bar" id="listen-top-bar"></div>
   <div class="listen-wrap">
-    <div class="listen-hint" id="listen-hint">tap to hear a random sentence</div>
+    <div class="listen-hint" id="listen-hint">tap play to hear a random sentence</div>
       <button class="play-btn" id="listen-play-btn" onclick="replayListen()">▶</button>
     <div class="listen-transcription" id="listen-transcription">
       <div class="listen-card" id="listen-card">
@@ -954,14 +954,13 @@ async function fetchAndPlay() {
 
   listenAudio = new Audio(item.audioUrl);
   listenAudio.play().catch(() => { error.textContent = 'could not play audio'; });
-  listenAudio.addEventListener('ended', () => {
-    next.classList.add('visible');
-  });
+  next.classList.add('visible');
+  listenAudio.addEventListener('ended', () => {});
   btn.disabled = false;
   bar.classList.remove('loading');
 
   // prefetch more in background when running low
-  if (listenCache.length < 3) prefetchListenCache();
+  if (listenCache.length < 20) prefetchListenCache();
 }
 
 
@@ -990,7 +989,7 @@ function switchTab(name, btn) {
   document.getElementById('panel-' + name).classList.add('active');
   btn.classList.add('active');
   if (name === 'quiz') startQuiz();
-  if (name === 'listen') fetchAndPlay();
+  if (name === 'listen' && listenCache.length === 0) prefetchListenCache();
 }
 
 // kick off cache prefetch immediately on page load
