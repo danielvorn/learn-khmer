@@ -233,6 +233,27 @@ body::before {
 #grid-subs .card { padding-bottom: 32px; }
 #grid-subs .wave { transform: translateY(16px); }
 
+/* LEVEL SELECT */
+.level-select { display: flex; flex-direction: column; align-items: center; gap: 24px; padding-top: 20px; }
+.level-select-label { font-size: 10px; letter-spacing: 0.25em; color: var(--muted); text-transform: uppercase; }
+.level-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; max-width: 400px; }
+.level-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 24px 16px; cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; gap: 8px; transition: border-color 0.2s, background 0.2s;
+}
+.level-card:hover { border-color: rgba(200,169,110,0.4); background: #1e1e1e; }
+.level-card:active { transform: scale(0.98); }
+.level-name { font-size: 13px; letter-spacing: 0.1em; color: var(--text); }
+.level-detail { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); }
+
+.change-level-btn {
+  background: none; border: none; color: var(--muted); font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer;
+  transition: color 0.2s; padding: 0;
+}
+.change-level-btn:hover { color: var(--accent); }
+
 /* QUIZ */
 .quiz-wrap { display: flex; flex-direction: column; align-items: center; gap: 28px; }
 .score-bar { display: flex; gap: 24px; font-size: 11px; letter-spacing: 0.15em; color: var(--muted); }
@@ -254,6 +275,24 @@ body::before {
 .play-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 .play-btn.pulse { animation: btnpulse 0.5s ease; }
 @keyframes btnpulse { 0%,100% { transform: scale(1); } 50% { transform: scale(0.91); } }
+
+.play-wave {
+  display: none;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+}
+.play-btn.playing .play-icon { display: none; }
+.play-btn.playing .play-wave { display: flex; }
+.play-wave span {
+  display: block; width: 3px; background: var(--accent);
+  border-radius: 3px; animation: bar 0.6s ease-in-out infinite alternate;
+}
+.play-wave span:nth-child(1) { height: 6px;  animation-delay: 0s; }
+.play-wave span:nth-child(2) { height: 14px; animation-delay: 0.1s; }
+.play-wave span:nth-child(3) { height: 20px; animation-delay: 0.2s; }
+.play-wave span:nth-child(4) { height: 14px; animation-delay: 0.05s; }
+.play-wave span:nth-child(5) { height: 6px;  animation-delay: 0.15s; }
 
 .play-hint { font-size: 10px; color: var(--muted); letter-spacing: 0.15em; margin-top: -16px; }
 
@@ -425,6 +464,7 @@ body::before {
 </style>
 </head>
 <body>
+<canvas id="particles" style="position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.35;"></canvas>
 <div class="app">
 
   <!-- SIDEBAR -->
@@ -503,24 +543,60 @@ body::before {
 
     <!-- QUIZ -->
     <div class="panel" id="panel-quiz">
-      <div class="quiz-wrap" id="quiz-active">
+
+      <!-- LEVEL SELECT -->
+      <div class="level-select" id="level-select">
+        <div class="level-select-label">Select difficulty</div>
+        <div class="level-grid">
+          <div class="level-card" onclick="startQuiz(1)">
+            <span class="level-name">Beginner</span>
+            <span class="level-detail">6 choices</span>
+          </div>
+          <div class="level-card" onclick="startQuiz(2)">
+            <span class="level-name">Intermediate</span>
+            <span class="level-detail">12 choices</span>
+          </div>
+          <div class="level-card" onclick="startQuiz(3)">
+            <span class="level-name">Advanced</span>
+            <span class="level-detail">20 choices</span>
+          </div>
+          <div class="level-card" onclick="startQuiz(4)">
+            <span class="level-name">Expert</span>
+            <span class="level-detail">All 33</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUIZ ACTIVE -->
+      <div class="quiz-wrap" id="quiz-active" style="display:none">
         <div class="score-bar">
           <div>Q <span id="q-num">1</span> / <span id="q-total">33</span></div>
           <div>✓ <span id="q-correct">0</span></div>
           <div>✗ <span id="q-wrong">0</span></div>
+          <div>⏱ <span id="q-timer">0:00</span></div>
+          <button class="change-level-btn" onclick="showLevelSelect()">Change level</button>
         </div>
         <div class="progress-track"><div class="progress-fill" id="q-progress" style="width:0%"></div></div>
-        <button class="play-btn" id="play-btn">▶</button>
+        <button class="play-btn" id="play-btn">
+          <span class="play-icon">▶</span>
+          <span class="play-wave"><span></span><span></span><span></span><span></span><span></span></span>
+        </button>
         <div class="play-hint">tap to replay</div>
         <div class="options-grid" id="options-grid"></div>
         <div class="feedback" id="feedback"></div>
         <button class="next-btn" id="next-btn" onclick="nextQuestion()">Next →</button>
       </div>
+
+      <!-- RESULTS -->
       <div class="results" id="quiz-results">
         <div class="results-label">Quiz Complete</div>
         <div class="results-score" id="res-score"></div>
         <div class="results-detail" id="res-detail"></div>
-        <button class="restart-btn" onclick="startQuiz()">Try Again</button>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
+          <button class="restart-btn" id="restart-btn" onclick="restartQuiz()">Try Again</button>
+          <button class="restart-btn" id="retry-wrong-btn" onclick="retryWrong()" style="display:none;border-color:var(--wrong);color:var(--wrong);">Retry Wrong</button>
+          <button class="restart-btn" onclick="showLevelSelect()">Change Level</button>
+        </div>
       </div>
     </div>
 
@@ -657,7 +733,7 @@ function switchSection(name, el, isMobile) {
   }
   el.classList.add('active');
 
-  if (name === 'quiz') startQuiz();
+  if (name === 'quiz') showLevelSelect();
   if (name === 'dictionary') initDictionary();
 }
 
@@ -909,6 +985,30 @@ function copyTranscription() {
 
 // ── QUIZ ──
 let quizQueue = [], currentQ = 0, correctCount = 0, wrongCount = 0, answered = false, quizAudio = null, currentFile = '';
+let currentLevel = 1;
+let wrongAnswers = [];
+let quizTimerInterval = null, quizStartTime = 0;
+const LEVEL_OPTIONS = { 1: 6, 2: 12, 3: 20, 4: 33 };
+const LEVEL_COLS    = { 1: 3,  2: 4,  3: 4,  4: 5  };
+
+function formatTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function startTimer() {
+  clearInterval(quizTimerInterval);
+  quizStartTime = Date.now();
+  quizTimerInterval = setInterval(() => {
+    document.getElementById('q-timer').textContent = formatTime(Date.now() - quizStartTime);
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(quizTimerInterval);
+  return Date.now() - quizStartTime;
+}
 
 function shuffle(arr) {
   const a = [...arr];
@@ -919,12 +1019,29 @@ function shuffle(arr) {
   return a;
 }
 
-function startQuiz() {
+function showLevelSelect() {
+  if (quizAudio) { quizAudio.pause(); quizAudio = null; }
+  stopTimer();
+  document.getElementById('q-timer').textContent = '0:00';
+  document.getElementById('level-select').style.display = 'flex';
+  document.getElementById('quiz-active').style.display = 'none';
+  document.getElementById('quiz-results').classList.remove('show');
+}
+
+function startQuiz(level) {
+  if (level) currentLevel = level;
   quizQueue = shuffle(consonants.map((c, i) => ({ ...c, index: i })));
-  currentQ = 0; correctCount = 0; wrongCount = 0;
+  currentQ = 0; correctCount = 0; wrongCount = 0; wrongAnswers = [];
+  document.getElementById('q-timer').textContent = '0:00';
+  document.getElementById('level-select').style.display = 'none';
   document.getElementById('quiz-results').classList.remove('show');
   document.getElementById('quiz-active').style.display = 'flex';
+  startTimer();
   loadQuestion();
+}
+
+function restartQuiz() {
+  startQuiz(currentLevel);
 }
 
 function loadQuestion() {
@@ -944,8 +1061,13 @@ function loadQuestion() {
   document.getElementById('play-btn').onclick = () => playQuizAudio(currentFile);
   playQuizAudio(currentFile);
 
-  const options = shuffle(consonants.map((c, i) => ({ ...c, index: i })));
+  const numOptions = LEVEL_OPTIONS[currentLevel];
+  const cols = LEVEL_COLS[currentLevel];
+  const others = shuffle(consonants.filter((_, i) => i !== q.index)).slice(0, numOptions - 1);
+  const options = shuffle([{ ...q }, ...others]);
+
   const og = document.getElementById('options-grid');
+  og.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
   og.innerHTML = '';
   options.forEach(opt => {
     const btn = document.createElement('button');
@@ -962,9 +1084,8 @@ function playQuizAudio(file) {
   quizAudio = new Audio(file);
   quizAudio.play().catch(() => {});
   const btn = document.getElementById('play-btn');
-  btn.classList.remove('pulse');
-  void btn.offsetWidth;
-  btn.classList.add('pulse');
+  btn.classList.add('playing');
+  quizAudio.addEventListener('ended', () => btn.classList.remove('playing'));
 }
 
 function handleAnswer(btn, chosen, correct) {
@@ -982,6 +1103,7 @@ function handleAnswer(btn, chosen, correct) {
     fb.className = 'feedback correct';
   } else {
     wrongCount++;
+    wrongAnswers.push(correct);
     btn.classList.remove('correct');
     btn.classList.add('wrong');
     fb.textContent = `✗  the answer was ${correct.khmer}`;
@@ -997,12 +1119,25 @@ function nextQuestion() {
   if (currentQ >= quizQueue.length) {
     document.getElementById('quiz-active').style.display = 'none';
     document.getElementById('quiz-results').classList.add('show');
+    const elapsed = stopTimer();
     const pct = Math.round(correctCount / quizQueue.length * 100);
     document.getElementById('res-score').textContent = pct + '%';
-    document.getElementById('res-detail').textContent = `${correctCount} correct · ${wrongCount} wrong · ${quizQueue.length} total`;
+    document.getElementById('res-detail').textContent = `${correctCount} correct · ${wrongCount} wrong · ${quizQueue.length} total · ${formatTime(elapsed)}`;
+    const retryBtn = document.getElementById('retry-wrong-btn');
+    retryBtn.style.display = wrongAnswers.length > 0 ? 'inline-block' : 'none';
   } else {
     loadQuestion();
   }
+}
+
+function retryWrong() {
+  quizQueue = shuffle(wrongAnswers.map(c => ({ ...c, index: consonants.findIndex(x => x.khmer === c.khmer) })));
+  currentQ = 0; correctCount = 0; wrongCount = 0; wrongAnswers = [];
+  document.getElementById('q-timer').textContent = '0:00';
+  document.getElementById('quiz-results').classList.remove('show');
+  document.getElementById('quiz-active').style.display = 'flex';
+  startTimer();
+  loadQuestion();
 }
 
 // ── DICTIONARY ──
@@ -1084,6 +1219,55 @@ function onDictSearch(val) {
   if (!val.trim()) { results.classList.remove('visible'); return; }
   showDictResults(val.trim(), dictData.filter(e => e.w.includes(val.trim())), true);
 }
+// ── PARTICLES ──
+(function() {
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function mkParticle() {
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.5 + 0.3,
+      vx: (Math.random() - 0.5) * 0.15,
+      vy: (Math.random() - 0.5) * 0.15,
+      a: Math.random() * 0.5 + 0.1,
+    };
+  }
+
+  function init() {
+    resize();
+    particles = Array.from({ length: 50 }, mkParticle);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,169,110,${p.a})`;
+      ctx.fill();
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0) p.x = W;
+      if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H;
+      if (p.y > H) p.y = 0;
+    }
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  init();
+  draw();
+})();
+
 </script>
 </body>
 </html>
