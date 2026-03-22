@@ -343,7 +343,7 @@ body::before {
 .listen-wrap { display: flex; flex-direction: column; align-items: center; gap: 28px; padding-top: 20px; }
 .listen-hint { font-size: 10px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
 
-.listen-transcription { min-height: 60px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; width: 100%; max-width: 500px; }
+.listen-transcription { height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; width: 100%; max-width: 500px; overflow: hidden; }
 .listen-card { display: none; width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px 48px 20px 20px; position: relative; animation: fadeUp 0.3s ease both; }
 .listen-card.visible { display: block; }
 .listen-transcription-text { font-family: 'Noto Serif Khmer', serif; font-size: 24px; line-height: 1.7; color: var(--text); display: block; text-align: left; }
@@ -417,13 +417,13 @@ body::before {
 .vowel-card.hidden { display: none; }
 
 /* SING */
-.sing-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.sing-wrap { display: flex; flex-direction: column; align-items: center; gap: 24px; padding-top: 8px; }
 .sing-filters { display: flex; gap: 6px; }
 .sing-filter-btn { background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; padding: 5px 12px; cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; }
 .sing-filter-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-.sing-next-btn { background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; padding: 5px 14px; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
-.sing-next-btn:hover { border-color: var(--accent); color: var(--accent); }
-.sing-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: border-color 0.2s; min-height: 200px; justify-content: center; }
+.sing-next-btn { background: none; border: 1px solid var(--accent); color: var(--accent); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; padding: 10px 32px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+.sing-next-btn:hover { background: var(--accent-dim); }
+.sing-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: border-color 0.2s; height: 280px; justify-content: center; width: 100%; max-width: 500px; overflow: hidden; }
 .sing-card:hover { border-color: rgba(200,169,110,0.3); }
 .sing-card.revealed { border-color: var(--accent); cursor: default; }
 .sing-word { font-size: 36px; letter-spacing: 0.05em; color: var(--text); }
@@ -682,26 +682,26 @@ body::before {
 
     <!-- SING -->
     <div class="panel" id="panel-sing">
-      <div class="sing-toolbar">
+      <div class="sing-wrap">
         <div class="sing-filters">
           <button class="sing-filter-btn active" onclick="setSingFilter('all', this)">All</button>
           <button class="sing-filter-btn" onclick="setSingFilter('100', this)">Top 100</button>
           <button class="sing-filter-btn" onclick="setSingFilter('500', this)">Top 500</button>
         </div>
+        <div class="sing-card" id="sing-card" onclick="revealSing()">
+          <div class="sing-word" id="sing-word"></div>
+          <div class="sing-hint" id="sing-hint">tap to reveal</div>
+          <div class="sing-khmer" id="sing-khmer"></div>
+          <div class="sing-variants" id="sing-variants"></div>
+          <div class="sing-copy-row" id="sing-copy-row" style="display:none">
+            <button class="sing-copy-btn" onclick="copySingWord(event)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="sing-loading" id="sing-loading">Loading…</div>
         <button class="sing-next-btn" onclick="nextSingCard()">Next →</button>
       </div>
-      <div class="sing-card" id="sing-card" onclick="revealSing()">
-        <div class="sing-word" id="sing-word"></div>
-        <div class="sing-hint" id="sing-hint">tap to reveal</div>
-        <div class="sing-khmer" id="sing-khmer"></div>
-        <div class="sing-variants" id="sing-variants"></div>
-        <div class="sing-copy-row" id="sing-copy-row" style="display:none">
-          <button class="sing-copy-btn" onclick="copySingWord(event)">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          </button>
-        </div>
-      </div>
-      <div class="sing-loading" id="sing-loading">Loading…</div>
     </div>
 
     <!-- SINGDECIPHER -->
