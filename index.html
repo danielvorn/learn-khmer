@@ -124,7 +124,7 @@ body::before {
 .nav-item:hover .nav-label { color: var(--muted); }
 
 .learn-subtoggle {
-  display: flex;
+  display: none;
   margin: 6px 12px 12px;
   background: #111;
   border-radius: 4px;
@@ -148,6 +148,8 @@ body::before {
 }
 
 .learn-sub-btn.active { background: rgba(200,169,110,0.12); color: var(--accent); }
+
+.learn-tabs { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 24px; }
 
 /* MAIN */
 .main {
@@ -179,7 +181,7 @@ body::before {
 .legend-toggle.active { color: var(--accent); text-decoration-color: var(--accent); }
 
 /* GRIDS */
-.grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+.grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
 
 .card {
   position: relative;
@@ -336,6 +338,11 @@ body::before {
 .restart-btn:hover { background: var(--accent-dim); }
 
 /* LISTEN */
+.listen-tabs { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 24px; }
+.listen-tab { flex: 1; background: none; border: none; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; padding: 10px 0; cursor: pointer; transition: color 0.2s, background 0.2s; }
+.listen-tab:first-child { border-right: 1px solid var(--border); }
+.listen-tab.active { color: var(--accent); background: var(--accent-dim); }
+.listen-tab:hover:not(.active) { color: var(--text); background: #1a1a1a; }
 .listen-top-bar { height: 2px; width: 0%; background: var(--accent); border-radius: 0 2px 2px 0; margin-bottom: 28px; }
 .listen-top-bar.loading { animation: topbar 1.4s ease-in-out infinite; }
 @keyframes topbar { 0% { width:0%; margin-left:0%; } 50% { width:70%; margin-left:15%; } 100% { width:0%; margin-left:100%; } }
@@ -352,9 +359,32 @@ body::before {
 .listen-copy-btn.copied { color: var(--correct); border-color: var(--correct); }
 .listen-reveal { display: none; }
 .listen-error { font-size: 10px; color: var(--wrong); letter-spacing: 0.1em; min-height: 16px; }
+.listen-nav { display: flex; gap: 12px; align-items: center; }
+.listen-prev { background: none; border: 1px solid var(--border); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; padding: 10px 24px; border-radius: 4px; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 0.3s, background 0.2s, color 0.2s, border-color 0.2s; }
+.listen-prev.visible { opacity: 1; pointer-events: auto; }
+.listen-prev:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 .listen-next { background: none; border: 1px solid var(--accent); color: var(--accent); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; padding: 10px 32px; border-radius: 4px; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 0.3s, background 0.2s; }
 .listen-next.visible { opacity: 1; pointer-events: auto; }
 .listen-next:hover { background: var(--accent-dim); }
+
+.listen-history { width: 100%; max-width: 500px; margin-top: 8px; }
+.listen-history-label { font-size: 9px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+.listen-history-scroll { max-height: 320px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; }
+.listen-history-scroll::-webkit-scrollbar { width: 4px; }
+.listen-history-scroll::-webkit-scrollbar-track { background: transparent; }
+.listen-history-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.listen-history-table { width: 100%; border-collapse: collapse; }
+.listen-history-table tr { border-bottom: 1px solid var(--border); }
+.listen-history-table tr:last-child { border-bottom: none; }
+.listen-history-table td { padding: 10px 8px; font-family: 'Noto Serif Khmer', serif; font-size: 16px; color: var(--text); line-height: 1.5; }
+.listen-history-table td:nth-child(2) { cursor: pointer; }
+.listen-history-table td:nth-child(2):hover { color: var(--accent); }
+.listen-history-table td.hist-index { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); width: 24px; padding-right: 12px; vertical-align: top; padding-top: 13px; }
+.listen-history-table td.hist-copy { width: 32px; vertical-align: middle; }
+.hist-copy-btn { background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: color 0.2s, border-color 0.2s; }
+.hist-copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+.hist-copy-btn.copied { color: var(--correct); border-color: var(--correct); }
+.listen-history-table tr.active-row td { color: var(--accent); }
 
 /* DICTIONARY */
 .dict-search-wrap { position: relative; margin-bottom: 20px; }
@@ -396,7 +426,7 @@ body::before {
 .vowel-filter-btn:hover { color: var(--text); }
 .vowel-filter-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-.vowel-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.vowel-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .vowel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 10px; animation: fadeUp 0.3s ease both; }
 .vowel-glyph { font-family: 'Noto Serif Khmer', serif; font-size: 44px; line-height: 1; color: var(--text); }
 .vowel-btns { display: flex; gap: 6px; width: 100%; }
@@ -498,6 +528,8 @@ body::before {
   .play-btn { width: 64px; height: 64px; font-size: 22px; }
   .quiz-wrap { gap: 20px; }
   .results-score { font-size: 56px; }
+  .learn-tabs { display: none; }
+  .learn-subtoggle { display: flex; }
   .vowel-grid { grid-template-columns: repeat(2, 1fr); }
   .dict-consonant-grid { grid-template-columns: repeat(4, 1fr); }
 }
@@ -519,10 +551,6 @@ body::before {
         <div class="nav-item active" id="nav-learn" onclick="switchSection('learn', this)">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           <span class="nav-label">Learn</span>
-        </div>
-        <div class="learn-subtoggle">
-          <button class="learn-sub-btn active" id="sub-consonants" onclick="switchLearn('consonants', this)">Consonants</button>
-          <button class="learn-sub-btn" id="sub-vowels" onclick="switchLearn('vowels', this)">Vowels</button>
         </div>
       </div>
       <div class="nav-section">
@@ -559,6 +587,10 @@ body::before {
 
     <!-- LEARN -->
     <div class="panel active" id="panel-learn">
+      <div class="learn-tabs" id="learn-tabs">
+        <button class="listen-tab active" id="ltab-consonants" onclick="switchLearn('consonants', this, true)">Consonants</button>
+        <button class="listen-tab" id="ltab-vowels" onclick="switchLearn('vowels', this, true)">Vowels</button>
+      </div>
       <div id="mobile-learn-toggle" class="mobile-learn-toggle" style="display:none">
         <button class="mobile-learn-btn active" onclick="switchLearnMobile('consonants', this)">Consonants</button>
         <button class="mobile-learn-btn" onclick="switchLearnMobile('vowels', this)">Vowels</button>
@@ -650,21 +682,65 @@ body::before {
 
     <!-- LISTEN -->
     <div class="panel" id="panel-listen">
-      <div class="listen-top-bar" id="listen-top-bar"></div>
-      <div class="listen-wrap">
-        <div class="listen-hint" id="listen-hint">tap play to hear a random sentence</div>
-        <button class="play-btn" id="listen-play-btn" onclick="replayListen()">▶</button>
-        <div class="listen-transcription">
-          <div class="listen-card" id="listen-card">
-            <span class="listen-transcription-text" id="listen-transcription-text"></span>
-            <button class="listen-copy-btn" id="listen-copy-btn" onclick="copyTranscription()" title="Copy">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            </button>
+      <div class="listen-tabs">
+        <button class="listen-tab active" id="ltab-phrases" onclick="switchListenTab('phrases', this)">Phrases</button>
+        <button class="listen-tab" id="ltab-vocab" onclick="switchListenTab('vocab', this)">Vocabulary</button>
+      </div>
+
+      <!-- PHRASES -->
+      <div class="listen-sub" id="listen-sub-phrases">
+        <div class="listen-top-bar" id="listen-top-bar"></div>
+        <div class="listen-wrap">
+          <div class="listen-hint" id="listen-hint">tap play to hear a random sentence</div>
+          <button class="play-btn" id="listen-play-btn" onclick="replayListen()">▶</button>
+          <div class="listen-transcription">
+            <div class="listen-card" id="listen-card">
+              <span class="listen-transcription-text" id="listen-transcription-text"></span>
+              <button class="listen-copy-btn" id="listen-copy-btn" onclick="copyTranscription()" title="Copy">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
           </div>
-          <span class="listen-reveal hidden" id="listen-reveal"></span>
+          <div class="listen-error" id="listen-error"></div>
+          <div class="listen-nav">
+            <button class="listen-prev" id="listen-prev" onclick="prevListen()">← Prev</button>
+            <button class="listen-next" id="listen-next" onclick="fetchAndPlay()">Next →</button>
+          </div>
+          <div class="listen-history" id="listen-history" style="display:none">
+            <div class="listen-history-label">History</div>
+            <div class="listen-history-scroll">
+              <table class="listen-history-table" id="listen-history-table"></table>
+            </div>
+          </div>
         </div>
-        <div class="listen-error" id="listen-error"></div>
-        <button class="listen-next" id="listen-next" onclick="fetchAndPlay()">Next →</button>
+      </div>
+
+      <!-- VOCABULARY -->
+      <div class="listen-sub" id="listen-sub-vocab" style="display:none">
+        <div class="listen-top-bar" id="vocab-top-bar"></div>
+        <div class="listen-wrap">
+          <div class="listen-hint" id="vocab-hint">tap play to hear a random word</div>
+          <button class="play-btn" id="vocab-play-btn" onclick="replayVocab()">▶</button>
+          <div class="listen-transcription">
+            <div class="listen-card" id="vocab-card">
+              <span class="listen-transcription-text" id="vocab-word"></span>
+              <button class="listen-copy-btn" id="vocab-copy-btn" onclick="copyVocabWord()" title="Copy">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="listen-error" id="vocab-error"></div>
+          <div class="listen-nav">
+            <button class="listen-prev" id="vocab-prev" onclick="prevVocab()">← Prev</button>
+            <button class="listen-next" id="vocab-next" onclick="fetchAndPlayVocab()">Next →</button>
+          </div>
+          <div class="listen-history" id="vocab-history" style="display:none">
+            <div class="listen-history-label">History</div>
+            <div class="listen-history-scroll">
+              <table class="listen-history-table" id="vocab-history-table"></table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -833,13 +909,20 @@ function switchSection(name, el, isMobile) {
   if (name === 'dictionary') initDictionary();
   if (name === 'sing') initSing();
   if (name === 'singdecipher') initSingDecipher();
+  if (name === 'listen') {
+    document.getElementById('listen-sub-phrases').style.display = 'block';
+    document.getElementById('listen-sub-vocab').style.display = 'none';
+    document.querySelectorAll('.listen-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('ltab-phrases').classList.add('active');
+    fetchAndPlay();
+  }
 }
 
-function switchLearn(sub, el) {
-  document.querySelectorAll('.learn-sub-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
+function switchLearn(sub, el, isDesktopTab) {
   document.getElementById('learn-consonants').style.display = sub === 'consonants' ? 'block' : 'none';
   document.getElementById('learn-vowels').style.display = sub === 'vowels' ? 'block' : 'none';
+  document.querySelectorAll('#learn-tabs .listen-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(sub === 'consonants' ? 'ltab-consonants' : 'ltab-vowels').classList.add('active');
 }
 
 function switchLearnMobile(sub, el) {
@@ -1002,6 +1085,7 @@ function filterVowels(filter, el) {
 
 // ── LISTEN ──
 let listenAudio = null, currentListenUrl = null, listenCache = [], isFetchingCache = false;
+let listenHistory = [], listenHistoryIndex = -1;
 
 async function prefetchListenCache() {
   if (isFetchingCache || listenCache.length > 20) return;
@@ -1017,6 +1101,98 @@ async function prefetchListenCache() {
 }
 
 prefetchListenCache();
+
+function renderListenHistory() {
+  const table = document.getElementById('listen-history-table');
+  const wrap = document.getElementById('listen-history');
+  if (!listenHistory.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  table.innerHTML = '';
+  [...listenHistory].reverse().slice(0, 10).forEach((item, i) => {
+    const idx = listenHistory.length - 1 - i;
+    const tr = document.createElement('tr');
+    if (idx === listenHistoryIndex) tr.classList.add('active-row');
+    tr.innerHTML = `<td class="hist-index">${listenHistory.length - i}</td><td>${item.transcription}</td><td class="hist-copy"><button class="hist-copy-btn">${COPY_SVG}</button></td>`;
+    tr.querySelector('td:nth-child(2)').addEventListener('click', () => {
+      listenHistoryIndex = idx;
+      const it = listenHistory[idx];
+      currentListenUrl = it.audioUrl;
+      document.getElementById('listen-transcription-text').textContent = it.transcription;
+      document.getElementById('listen-card').classList.add('visible');
+      document.getElementById('listen-hint').textContent = 'tap to replay';
+      document.getElementById('listen-next').classList.add('visible');
+      document.getElementById('listen-prev').classList.toggle('visible', idx > 0);
+      if (listenAudio) listenAudio.pause();
+      listenAudio = new Audio(it.audioUrl);
+      listenAudio.play().catch(() => {});
+      renderListenHistory();
+    });
+    tr.querySelector('.hist-copy-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const btn = tr.querySelector('.hist-copy-btn');
+      navigator.clipboard.writeText(item.transcription).then(() => {
+        btn.classList.add('copied'); btn.innerHTML = CHECK_SVG;
+        setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = COPY_SVG; }, 2000);
+      });
+    });
+    table.appendChild(tr);
+  });
+}
+
+function renderVocabHistory() {
+  const table = document.getElementById('vocab-history-table');
+  const wrap = document.getElementById('vocab-history');
+  if (!vocabHistory.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  table.innerHTML = '';
+  [...vocabHistory].reverse().slice(0, 10).forEach((item, i) => {
+    const idx = vocabHistory.length - 1 - i;
+    const tr = document.createElement('tr');
+    if (idx === vocabHistoryIndex) tr.classList.add('active-row');
+    tr.innerHTML = `<td class="hist-index">${vocabHistory.length - i}</td><td>${item.word}</td><td class="hist-copy"><button class="hist-copy-btn">${COPY_SVG}</button></td>`;
+    tr.querySelector('td:nth-child(2)').addEventListener('click', () => {
+      vocabHistoryIndex = idx;
+      const it = vocabHistory[idx];
+      currentVocabUrl = it.audioUrl;
+      document.getElementById('vocab-word').textContent = it.word;
+      document.getElementById('vocab-card').classList.add('visible');
+      document.getElementById('vocab-hint').textContent = 'tap to replay';
+      document.getElementById('vocab-next').classList.add('visible');
+      document.getElementById('vocab-prev').classList.toggle('visible', idx > 0);
+      if (vocabAudio) vocabAudio.pause();
+      vocabAudio = new Audio(it.audioUrl);
+      vocabAudio.play().catch(() => {});
+      renderVocabHistory();
+    });
+    tr.querySelector('.hist-copy-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const btn = tr.querySelector('.hist-copy-btn');
+      navigator.clipboard.writeText(item.word).then(() => {
+        btn.classList.add('copied'); btn.innerHTML = CHECK_SVG;
+        setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = COPY_SVG; }, 2000);
+      });
+    });
+    table.appendChild(tr);
+  });
+}
+
+
+function prevListen() {
+  if (listenHistoryIndex <= 0) return;
+  listenHistoryIndex--;
+  const item = listenHistory[listenHistoryIndex];
+  currentListenUrl = item.audioUrl;
+  document.getElementById('listen-transcription-text').textContent = item.transcription;
+  document.getElementById('listen-card').classList.add('visible');
+  document.getElementById('listen-hint').textContent = 'tap to replay';
+  document.getElementById('listen-next').classList.add('visible');
+  document.getElementById('listen-prev').classList.toggle('visible', listenHistoryIndex > 0);
+  if (listenAudio) { listenAudio.pause(); }
+  listenAudio = new Audio(item.audioUrl);
+  listenAudio.play().catch(() => {});
+  renderListenHistory();
+}
+
 
 function replayListen() {
   if (!currentListenUrl) { fetchAndPlay(); return; }
@@ -1057,16 +1233,133 @@ async function fetchAndPlay() {
 
   const item = listenCache.shift();
   currentListenUrl = item.audioUrl;
+  listenHistory.push(item);
+  listenHistoryIndex = listenHistory.length - 1;
   text.textContent = item.transcription;
   document.getElementById('listen-card').classList.add('visible');
   hint.textContent = 'tap to replay';
   listenAudio = new Audio(item.audioUrl);
   listenAudio.play().catch(() => { error.textContent = 'could not play audio'; });
   next.classList.add('visible');
+  const prev = document.getElementById('listen-prev');
+  if (prev) prev.classList.toggle('visible', listenHistoryIndex > 0);
   btn.disabled = false;
   bar.classList.remove('loading');
   if (listenCache.length < 20) prefetchListenCache();
+  renderListenHistory();
 }
+
+function switchListenTab(tab, btn) {
+  document.querySelectorAll('.listen-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('listen-sub-phrases').style.display = tab === 'phrases' ? 'block' : 'none';
+  document.getElementById('listen-sub-vocab').style.display = tab === 'vocab' ? 'block' : 'none';
+  if (tab === 'vocab') fetchAndPlayVocab();
+}
+
+// ── VOCABULARY ──
+let vocabAudio = null, currentVocabUrl = null, vocabCache = [], isFetchingVocabCache = false;
+let vocabHistory = [], vocabHistoryIndex = -1;
+const VOCAB_TOTAL = 3100;
+
+async function prefetchVocabCache() {
+  if (isFetchingVocabCache || vocabCache.length > 20) return;
+  isFetchingVocabCache = true;
+  try {
+    const offset = Math.floor(Math.random() * (VOCAB_TOTAL - 100));
+    const res = await fetch(`https://datasets-server.huggingface.co/rows?dataset=seanghay/khmer_kheng_info_speech&config=default&split=train&offset=${offset}&length=100`);
+    const data = await res.json();
+    if (!res.ok) throw new Error('API error');
+    vocabCache.push(...data.rows.map(r => ({ audioUrl: r.row.audio[0].src, word: r.row.word })));
+  } catch (e) {}
+  isFetchingVocabCache = false;
+}
+
+prefetchVocabCache();
+
+function prevVocab() {
+  if (vocabHistoryIndex <= 0) return;
+  vocabHistoryIndex--;
+  const item = vocabHistory[vocabHistoryIndex];
+  currentVocabUrl = item.audioUrl;
+  document.getElementById('vocab-word').textContent = item.word;
+  document.getElementById('vocab-card').classList.add('visible');
+  document.getElementById('vocab-hint').textContent = 'tap to replay';
+  document.getElementById('vocab-next').classList.add('visible');
+  document.getElementById('vocab-prev').classList.toggle('visible', vocabHistoryIndex > 0);
+  if (vocabAudio) { vocabAudio.pause(); }
+  vocabAudio = new Audio(item.audioUrl);
+  vocabAudio.play().catch(() => {});
+  renderVocabHistory();
+}
+
+function replayVocab() {
+  if (!currentVocabUrl) { fetchAndPlayVocab(); return; }
+  if (vocabAudio) { vocabAudio.pause(); vocabAudio.currentTime = 0; }
+  vocabAudio = new Audio(currentVocabUrl);
+  vocabAudio.play().catch(() => {});
+  document.getElementById('vocab-play-btn').classList.add('pulse');
+}
+
+async function fetchAndPlayVocab() {
+  const btn = document.getElementById('vocab-play-btn');
+  const hint = document.getElementById('vocab-hint');
+  const error = document.getElementById('vocab-error');
+  const next = document.getElementById('vocab-next');
+  const bar = document.getElementById('vocab-top-bar');
+
+  document.getElementById('vocab-card').classList.remove('visible');
+  next.classList.remove('visible');
+  error.textContent = '';
+  hint.textContent = 'loading…';
+  btn.disabled = true;
+  bar.classList.add('loading');
+  if (vocabAudio) { vocabAudio.pause(); vocabAudio = null; }
+
+  if (vocabCache.length === 0) {
+    await prefetchVocabCache();
+    while (isFetchingVocabCache) await new Promise(r => setTimeout(r, 100));
+  }
+
+  if (vocabCache.length === 0) {
+    hint.textContent = 'tap play to hear a random word';
+    error.textContent = 'failed to load — check your connection';
+    btn.disabled = false;
+    bar.classList.remove('loading');
+    return;
+  }
+
+  const item = vocabCache.shift();
+  currentVocabUrl = item.audioUrl;
+  vocabHistory.push(item);
+  vocabHistoryIndex = vocabHistory.length - 1;
+  document.getElementById('vocab-word').textContent = item.word;
+  document.getElementById('vocab-card').classList.add('visible');
+  hint.textContent = 'tap to replay';
+  vocabAudio = new Audio(item.audioUrl);
+  vocabAudio.play().catch(() => { error.textContent = 'could not play audio'; });
+  next.classList.add('visible');
+  const prev = document.getElementById('vocab-prev');
+  if (prev) prev.classList.toggle('visible', vocabHistoryIndex > 0);
+  btn.disabled = false;
+  bar.classList.remove('loading');
+  if (vocabCache.length < 20) prefetchVocabCache();
+  renderVocabHistory();
+}
+
+function copyVocabWord() {
+  const text = document.getElementById('vocab-word').textContent;
+  const btn = document.getElementById('vocab-copy-btn');
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    }, 2000);
+  });
+}
+
 
 function copyTranscription() {
   const text = document.getElementById('listen-transcription-text').textContent;
@@ -1082,7 +1375,6 @@ function copyTranscription() {
 }
 
 // ── QUIZ ──
-let quizQueue = [], currentQ = 0, correctCount = 0, wrongCount = 0, answered = false, currentFile = '';
 let currentLevel = 1;
 let wrongAnswers = [];
 let quizTimerInterval = null, quizStartTime = 0;
