@@ -421,11 +421,6 @@ body::before {
 .dict-loading.visible { display: block; }
 
 /* VOWELS */
-.vowel-filter { display: flex; gap: 16px; margin-bottom: 16px; align-items: center; }
-.vowel-filter-btn { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); cursor: pointer; padding-bottom: 4px; border: none; border-bottom: 1px solid transparent; background: none; font-family: 'DM Mono', monospace; transition: color 0.2s, border-color 0.2s; }
-.vowel-filter-btn:hover { color: var(--text); }
-.vowel-filter-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-
 .vowel-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .vowel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 10px; animation: fadeUp 0.3s ease both; }
 .vowel-glyph { font-family: 'Noto Serif Khmer', serif; font-size: 44px; line-height: 1; color: var(--text); }
@@ -436,15 +431,14 @@ body::before {
 .vowel-btn.s1:hover, .vowel-btn.s1.playing { background: rgba(106,159,216,0.1); border-color: var(--series1); }
 .vowel-btn.s2 { border-color: rgba(216,122,106,0.4); }
 .vowel-btn.s2:hover, .vowel-btn.s2.playing { background: rgba(216,122,106,0.1); border-color: var(--series2); }
-.vowel-btn.same { border-color: rgba(200,169,110,0.4); }
-.vowel-btn.same:hover, .vowel-btn.same.playing { background: var(--accent-dim); border-color: var(--accent); }
 .vowel-btn-label { font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; }
 .vowel-btn.s1 .vowel-btn-label { color: var(--series1); }
 .vowel-btn.s2 .vowel-btn-label { color: var(--series2); }
-.vowel-btn.same .vowel-btn-label { color: var(--accent); }
+.vowel-btn-word { font-family: 'Noto Serif Khmer', serif; font-size: 15px; color: var(--text); line-height: 1; }
 .vowel-btn-play { font-size: 10px; color: var(--muted); }
 .vowel-btn.playing .vowel-btn-play { color: var(--text); }
-.vowel-card.hidden { display: none; }
+.card.digraph { border-color: rgba(160,140,200,0.4); }
+.card.independent { border-color: rgba(110,180,160,0.4); }
 
 /* SING */
 .sing-wrap { display: flex; flex-direction: column; align-items: center; gap: 24px; padding-top: 8px; }
@@ -588,12 +582,16 @@ body::before {
     <!-- LEARN -->
     <div class="panel active" id="panel-learn">
       <div class="learn-tabs" id="learn-tabs">
-        <button class="listen-tab active" id="ltab-consonants" onclick="switchLearn('consonants', this, true)">Consonants</button>
-        <button class="listen-tab" id="ltab-vowels" onclick="switchLearn('vowels', this, true)">Vowels</button>
+        <button class="listen-tab active" id="ltab-consonants" onclick="switchLearn('consonants', this)">Consonants</button>
+        <button class="listen-tab" id="ltab-vowels" onclick="switchLearn('vowels', this)">Vowels</button>
+        <button class="listen-tab" id="ltab-digraphs" onclick="switchLearn('digraphs', this)">Digraphs</button>
+        <button class="listen-tab" id="ltab-independent" onclick="switchLearn('independent', this)">Independent Vowels</button>
       </div>
       <div id="mobile-learn-toggle" class="mobile-learn-toggle" style="display:none">
         <button class="mobile-learn-btn active" onclick="switchLearnMobile('consonants', this)">Consonants</button>
         <button class="mobile-learn-btn" onclick="switchLearnMobile('vowels', this)">Vowels</button>
+        <button class="mobile-learn-btn" onclick="switchLearnMobile('digraphs', this)">Digraphs</button>
+        <button class="mobile-learn-btn" onclick="switchLearnMobile('independent', this)">Indep. Vowels</button>
       </div>
       <div id="learn-consonants">
         <div class="practice-toolbar">
@@ -610,14 +608,18 @@ body::before {
         <div class="grid" id="grid-subs" style="display:none"></div>
       </div>
       <div id="learn-vowels" style="display:none">
-        <div class="vowel-filter">
-          <button class="vowel-filter-btn active" onclick="filterVowels('all', this)">All</button>
-          <button class="vowel-filter-btn" onclick="filterVowels('different', this)">Different</button>
-          <button class="vowel-filter-btn" onclick="filterVowels('same', this)">Same in both</button>
-          <span class="legend-divider">|</span>
-          <button class="vowel-filter-btn" id="vowel-scramble" onclick="scrambleVowels(this)">Scramble</button>
+        <div class="practice-toolbar">
+          <div class="series-legend">
+            <span class="legend-toggle" id="vowel-scramble-toggle" onclick="scrambleVowels(this)">Scramble</span>
+          </div>
         </div>
         <div class="vowel-grid" id="vowel-grid"></div>
+      </div>
+      <div id="learn-digraphs" style="display:none">
+        <div class="grid" id="grid-digraphs"></div>
+      </div>
+      <div id="learn-independent" style="display:none">
+        <div class="grid" id="grid-independent"></div>
       </div>
     </div>
 
@@ -865,30 +867,61 @@ const consonants = [
   { khmer: 'អ', roman: 'a',    series: 1, sub: '្អ' },
 ];
 
+// vowels: glyph = bare vowel, a = full A-series word (ក ref), b = full B-series word (គ ref)
 const vowels = [
-  { glyph: 'ា',  num: 1,  same: false },
-  { glyph: 'ិ',  num: 2,  same: false },
-  { glyph: 'ី',  num: 3,  same: false },
-  { glyph: 'ឹ',  num: 4,  same: true  },
-  { glyph: 'ឺ',  num: 5,  same: false },
-  { glyph: 'ុ',  num: 6,  same: false },
-  { glyph: 'ូ',  num: 7,  same: false },
-  { glyph: 'ួ',  num: 8,  same: true  },
-  { glyph: 'ើ',  num: 9,  same: false },
-  { glyph: 'ឿ',  num: 10, same: true  },
-  { glyph: 'ៀ',  num: 11, same: true  },
-  { glyph: 'េ',  num: 12, same: true  },
-  { glyph: 'ែ',  num: 13, same: false },
-  { glyph: 'ៃ',  num: 14, same: false },
-  { glyph: 'ោ',  num: 15, same: false },
-  { glyph: 'ៅ',  num: 16, same: false },
-  { glyph: 'ុំ', num: 17, same: false },
-  { glyph: 'ំ',  num: 18, same: false },
-  { glyph: 'ាំ', num: 19, same: false },
-  { glyph: 'ះ',  num: 20, same: false },
-  { glyph: 'ុះ', num: 21, same: false },
-  { glyph: 'េះ', num: 22, same: false },
-  { glyph: 'ោះ', num: 23, same: false },
+  { glyph: 'ា',  num: 1,  a: 'កា',  b: 'គា'  },
+  { glyph: 'ិ',  num: 2,  a: 'កិ',  b: 'គិ'  },
+  { glyph: 'ី',  num: 3,  a: 'កី',  b: 'គី'  },
+  { glyph: 'ឹ',  num: 4,  a: 'កឹ',  b: 'គឹ'  },
+  { glyph: 'ឺ',  num: 5,  a: 'កឺ',  b: 'គឺ'  },
+  { glyph: 'ុ',  num: 6,  a: 'កុ',  b: 'គុ'  },
+  { glyph: 'ូ',  num: 7,  a: 'កូ',  b: 'គូ'  },
+  { glyph: 'ួ',  num: 8,  a: 'កួ',  b: 'គួ'  },
+  { glyph: 'ើ',  num: 9,  a: 'កើ',  b: 'គើ'  },
+  { glyph: 'ឿ',  num: 10, a: 'កឿ',  b: 'គឿ'  },
+  { glyph: 'ៀ',  num: 11, a: 'កៀ',  b: 'គៀ'  },
+  { glyph: 'េ',  num: 12, a: 'កេ',  b: 'គេ'  },
+  { glyph: 'ែ',  num: 13, a: 'កែ',  b: 'គែ'  },
+  { glyph: 'ៃ',  num: 14, a: 'កៃ',  b: 'គៃ'  },
+  { glyph: 'ោ',  num: 15, a: 'កោ',  b: 'គោ'  },
+  { glyph: 'ៅ',  num: 16, a: 'កៅ',  b: 'គៅ'  },
+  { glyph: 'ុំ', num: 17, a: 'កុំ', b: 'គុំ' },
+  { glyph: 'ំ',  num: 18, a: 'កំ',  b: 'គំ'  },
+  { glyph: 'ាំ', num: 19, a: 'កាំ', b: 'គាំ' },
+  { glyph: 'ះ',  num: 20, a: 'កះ',  b: 'គះ'  },
+  { glyph: 'ិះ', num: 21, a: 'កិះ', b: 'គិះ' },
+  { glyph: 'េះ', num: 22, a: 'កេះ', b: 'គេះ' },
+  { glyph: 'ោះ', num: 23, a: 'កោះ', b: 'គោះ' },
+];
+
+const digraphs = [
+  { khmer: 'ហ្គ',  num: 1  },
+  { khmer: 'ហ្គ៊', num: 2  },
+  { khmer: 'ហ្ន',  num: 3  },
+  { khmer: 'ប៉',   num: 4  },
+  { khmer: 'ហ្ម',  num: 5  },
+  { khmer: 'ហ្ល',  num: 6  },
+  { khmer: 'ហ្វ',  num: 7  },
+  { khmer: 'ហ្វ៊', num: 8  },
+  { khmer: 'ហ្ស',  num: 9  },
+  { khmer: 'ហ្ស៊', num: 10 },
+];
+
+const independentVowels = [
+  { khmer: 'ឥ',  num: 1  },
+  { khmer: 'ឦ',  num: 2  },
+  { khmer: 'ឧ',  num: 3  },
+  { khmer: 'ឩ',  num: 4  },
+  { khmer: 'ឪ',  num: 5  },
+  { khmer: 'ឫ',  num: 6  },
+  { khmer: 'ឬ',  num: 7  },
+  { khmer: 'ឭ',  num: 8  },
+  { khmer: 'ឮ',  num: 9  },
+  { khmer: 'ឯ',  num: 10 },
+  { khmer: 'ឰ',  num: 11 },
+  { khmer: 'ឱ',  num: 12 },
+  { khmer: 'ឲ',  num: 13 },
+  { khmer: 'ឳ',  num: 14 },
 ];
 
 // ── NAV ──
@@ -918,18 +951,20 @@ function switchSection(name, el, isMobile) {
   }
 }
 
-function switchLearn(sub, el, isDesktopTab) {
-  document.getElementById('learn-consonants').style.display = sub === 'consonants' ? 'block' : 'none';
-  document.getElementById('learn-vowels').style.display = sub === 'vowels' ? 'block' : 'none';
+function switchLearn(sub, el) {
+  ['consonants','vowels','digraphs','independent'].forEach(s => {
+    document.getElementById('learn-' + s).style.display = s === sub ? 'block' : 'none';
+  });
   document.querySelectorAll('#learn-tabs .listen-tab').forEach(b => b.classList.remove('active'));
-  document.getElementById(sub === 'consonants' ? 'ltab-consonants' : 'ltab-vowels').classList.add('active');
+  document.getElementById('ltab-' + sub).classList.add('active');
 }
 
 function switchLearnMobile(sub, el) {
   document.querySelectorAll('.mobile-learn-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('learn-consonants').style.display = sub === 'consonants' ? 'block' : 'none';
-  document.getElementById('learn-vowels').style.display = sub === 'vowels' ? 'block' : 'none';
+  ['consonants','vowels','digraphs','independent'].forEach(s => {
+    document.getElementById('learn-' + s).style.display = s === sub ? 'block' : 'none';
+  });
 }
 
 // show mobile toggle on mobile
@@ -943,7 +978,7 @@ let currentAudio = null, currentCard = null;
 
 consonants.forEach((c, i) => {
   const num = String(i + 1).padStart(2, '0');
-  const file = `audio/c-${num}.wav`;
+  const file = `audio/consonants/c-${num}.mp3`;
   const card = document.createElement('div');
   card.className = 'card';
   card.dataset.series = c.series;
@@ -973,7 +1008,7 @@ const gridSubs = document.getElementById('grid-subs');
 consonants.forEach((c, i) => {
   if (!c.sub) return;
   const num = String(i + 1).padStart(2, '0');
-  const file = `audio/c-${num}.wav`;
+  const file = `audio/consonants/c-${num}.mp3`;
   const card = document.createElement('div');
   card.className = 'card';
   card.dataset.series = c.series;
@@ -1034,14 +1069,20 @@ let vowelAudio = null, vowelPlayingBtn = null;
     const num = String(v.num).padStart(2, '0');
     const card = document.createElement('div');
     card.className = 'vowel-card';
-    card.dataset.same = v.same;
     card.dataset.num = v.num;
     card.style.animationDelay = `${i * 0.03}s`;
-    if (v.same) {
-      card.innerHTML = `<span class="vowel-glyph">${v.glyph}</span><div class="vowel-btns"><button class="vowel-btn same" data-file="audio/vowels/v1-${num}.wav"><span class="vowel-btn-label">Same in both</span><span class="vowel-btn-play">▶</span></button></div>`;
-    } else {
-      card.innerHTML = `<span class="vowel-glyph">${v.glyph}</span><div class="vowel-btns"><button class="vowel-btn s1" data-file="audio/vowels/v1-${num}.wav"><span class="vowel-btn-label">Series 1</span><span class="vowel-btn-play">▶</span></button><button class="vowel-btn s2" data-file="audio/vowels/v2-${num}.wav"><span class="vowel-btn-label">Series 2</span><span class="vowel-btn-play">▶</span></button></div>`;
-    }
+    card.innerHTML = `
+      <span class="vowel-glyph">${v.glyph}</span>
+      <div class="vowel-btns">
+        <button class="vowel-btn s1" data-file="audio/vowels/a/v-${num}.mp3">
+          <span class="vowel-btn-word">${v.a}</span>
+          <span class="vowel-btn-label">A ▶</span>
+        </button>
+        <button class="vowel-btn s2" data-file="audio/vowels/b/vb-${num}.mp3">
+          <span class="vowel-btn-word">${v.b}</span>
+          <span class="vowel-btn-label">B ▶</span>
+        </button>
+      </div>`;
     card.querySelectorAll('.vowel-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         if (vowelAudio) { vowelAudio.pause(); vowelAudio.currentTime = 0; }
@@ -1072,16 +1113,65 @@ function scrambleVowels(btn) {
   cards.forEach(c => vgrid.appendChild(c));
 }
 
-function filterVowels(filter, el) {
-  document.querySelectorAll('.vowel-filter-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  document.querySelectorAll('.vowel-card').forEach(card => {
-    const isSame = card.dataset.same === 'true';
-    if (filter === 'all') card.classList.remove('hidden');
-    else if (filter === 'same') card.classList.toggle('hidden', !isSame);
-    else if (filter === 'different') card.classList.toggle('hidden', isSame);
+// ── DIGRAPHS ──
+(function initDigraphs() {
+  const grid = document.getElementById('grid-digraphs');
+  digraphs.forEach((d, i) => {
+    const num = String(d.num).padStart(2, '0');
+    const file = `audio/digraphs/d-${num}.mp3`;
+    const card = document.createElement('div');
+    card.className = 'card digraph';
+    card.style.animationDelay = `${i * 0.025}s`;
+    card.innerHTML = `<span class="khmer">${d.khmer}</span><div class="wave"><span></span><span></span><span></span><span></span><span></span></div>`;
+    card.addEventListener('click', (e) => {
+      const rect = card.getBoundingClientRect();
+      const rip = document.createElement('div');
+      rip.className = 'ripple-el';
+      const size = Math.max(rect.width, rect.height);
+      rip.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+      card.appendChild(rip);
+      rip.addEventListener('animationend', () => rip.remove());
+      if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+      if (currentCard) currentCard.classList.remove('playing');
+      const audio = new Audio(file);
+      currentAudio = audio; currentCard = card;
+      card.classList.add('playing');
+      audio.play().catch(() => card.classList.remove('playing'));
+      audio.addEventListener('ended', () => card.classList.remove('playing'));
+    });
+    grid.appendChild(card);
   });
-}
+})();
+
+// ── INDEPENDENT VOWELS ──
+(function initIndependentVowels() {
+  const grid = document.getElementById('grid-independent');
+  independentVowels.forEach((v, i) => {
+    const num = String(v.num).padStart(2, '0');
+    const file = `audio/vowels/independent/vi-${num}.mp3`;
+    const card = document.createElement('div');
+    card.className = 'card independent';
+    card.style.animationDelay = `${i * 0.025}s`;
+    card.innerHTML = `<span class="khmer">${v.khmer}</span><div class="wave"><span></span><span></span><span></span><span></span><span></span></div>`;
+    card.addEventListener('click', (e) => {
+      const rect = card.getBoundingClientRect();
+      const rip = document.createElement('div');
+      rip.className = 'ripple-el';
+      const size = Math.max(rect.width, rect.height);
+      rip.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+      card.appendChild(rip);
+      rip.addEventListener('animationend', () => rip.remove());
+      if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+      if (currentCard) currentCard.classList.remove('playing');
+      const audio = new Audio(file);
+      currentAudio = audio; currentCard = card;
+      card.classList.add('playing');
+      audio.play().catch(() => card.classList.remove('playing'));
+      audio.addEventListener('ended', () => card.classList.remove('playing'));
+    });
+    grid.appendChild(card);
+  });
+})();
 
 // ── LISTEN ──
 let listenAudio = null, currentListenUrl = null, listenCache = [], isFetchingCache = false;
@@ -1438,7 +1528,7 @@ function loadQuestion() {
   answered = false;
   const q = quizQueue[currentQ];
   const num = String(q.index + 1).padStart(2, '0');
-  currentFile = `audio/c-${num}.wav`;
+  currentFile = `audio/consonants/c-${num}.mp3`;
 
   document.getElementById('feedback').textContent = '';
   document.getElementById('feedback').className = 'feedback';
