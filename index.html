@@ -450,24 +450,28 @@ body::before {
 /* smaller, inline play button here — the quiz keeps the full-size one */
 #panel-write .play-btn { width: 46px; height: 46px; flex: none; }
 #panel-write .play-icon { font-size: 15px; }
-.write-canvas-wrap { position: relative; width: 100%; max-width: min(340px, 40vh); aspect-ratio: 1; }
-.write-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
-.write-canvas-wrap.correct { border-color: var(--correct); }
-.write-ghost {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font-family: 'Noto Serif Khmer', serif; line-height: 1; color: var(--text);
-  pointer-events: none; user-select: none; opacity: 0; transition: opacity 0.4s;
-}
-.write-ghost.visible { opacity: 0.13; }
-.write-ghost.reveal { opacity: 0.4; color: var(--correct); }
-.write-canvas {
-  position: absolute; inset: 0; width: 100%; height: 100%;
+/* The surface/border live on the WRAPPER, not the canvas. An opaque canvas painted after
+   the ghost in DOM order hid the outline completely, so Peek/Trace/Fading all looked dead. */
+.write-canvas-wrap {
+  position: relative; width: 100%; max-width: min(340px, 40vh); aspect-ratio: 1;
   background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-  touch-action: none; cursor: crosshair; transition: border-color 0.25s;
+  overflow: hidden;
 }
-.write-canvas.pass { border-color: var(--correct); }
-.write-canvas.fail { border-color: var(--wrong); }
-.write-tools { display: flex; gap: 8px; align-items: center; }
+.write-canvas-wrap.pass { border-color: var(--correct); }
+.write-canvas-wrap.fail { border-color: var(--wrong); }
+.write-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.write-ghost {
+  position: absolute; inset: 0; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Noto Serif Khmer', serif; line-height: 1; color: var(--text);
+  pointer-events: none; user-select: none; opacity: 0;
+}
+.write-ghost.visible { opacity: 0.2; }
+.write-ghost.reveal { opacity: 0.45; color: var(--correct); }
+.write-canvas {
+  position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%;
+  background: transparent; touch-action: none; cursor: crosshair;
+}
 .write-tool-btn {
   background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--muted);
   font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase;
@@ -746,7 +750,7 @@ body::before {
         <div class="write-actions">
           <button class="write-tool-btn" onclick="writeUndo()">Undo</button>
           <button class="write-tool-btn" onclick="writeClear()">Clear</button>
-          <button class="write-tool-btn" onclick="writePeek()">Peek</button>
+          <button class="write-tool-btn" id="w-peek-btn" onclick="writePeek()">Peek</button>
           <button class="write-check-btn" id="w-check-btn" onclick="writeCheck()">Check</button>
         </div>
         <button class="next-btn" id="w-next-btn" onclick="writeNext()">Next →</button>
@@ -1770,6 +1774,7 @@ let wStrokes = [], wActiveStroke = null, wAnswered = false;
 let wTimerInterval = null, wStartTime = 0;
 let wCanvas = null, wCtx = null, wDpr = 1;
 let wFontReady = false;
+let wPeekTimer = null, wGhostGen = 0;
 const wMaskCanvas = document.createElement('canvas');
 const wUserCanvas = document.createElement('canvas');
 const wAudioEl = new Audio();
@@ -1903,7 +1908,7 @@ function writeClear() {
   wStrokes = []; wActiveStroke = null;
   wRedraw();
   wUpdateCheckState();
-  wCanvas.classList.remove('pass', 'fail');
+  document.querySelector('.write-canvas-wrap').classList.remove('pass', 'fail');
   document.getElementById('w-meter').style.width = '0%';
   document.getElementById('w-meter').className = 'write-meter-fill';
   if (!wAnswered) document.getElementById('w-feedback').textContent = '';
@@ -1916,10 +1921,18 @@ function writeUndo() {
   wUpdateCheckState();
 }
 
+// Flash the outline briefly. Guards: in Trace mode the outline is already permanent, so
+// the timeout below would have *hidden* it; and a second click must not let the first
+// click's timer cut the peek short.
 function writePeek() {
+  if (wLevel === 1 || wAnswered) return;
   const ghost = document.getElementById('w-ghost');
+  clearTimeout(wPeekTimer);
+  wGhostGen++;                       // cancel any pending scheduled reveal
   ghost.classList.add('visible');
-  setTimeout(() => { if (!wAnswered) ghost.classList.remove('visible'); }, 900);
+  wPeekTimer = setTimeout(() => {
+    if (!wAnswered && wLevel !== 1) ghost.classList.remove('visible');
+  }, 1100);
 }
 
 function wUpdateCheckState() {
@@ -1942,7 +1955,7 @@ function wLoad() {
   document.getElementById('w-meter').style.width = '0%';
   document.getElementById('w-meter').className = 'write-meter-fill';
   document.getElementById('w-next-btn').classList.remove('visible');
-  wCanvas.classList.remove('pass', 'fail');
+  document.querySelector('.write-canvas-wrap').classList.remove('pass', 'fail');
 
   // prompt: Blind mode hides the romanisation entirely
   const roman = document.getElementById('w-roman');
@@ -1958,13 +1971,24 @@ function wLoad() {
 
   // ghost outline per level
   const ghost = document.getElementById('w-ghost');
+  clearTimeout(wPeekTimer);
   ghost.className = 'write-ghost';
   ghost.textContent = q.khmer;
   ghost.style.fontSize = Math.round(document.querySelector('.write-canvas-wrap').clientWidth * 0.62) + 'px';
-  if (wLevel === 1) ghost.classList.add('visible');
-  else if (wLevel === 2) {
+  // Peek is meaningless while the outline is permanently shown
+  document.getElementById('w-peek-btn').style.display = wLevel === 1 ? 'none' : '';
+
+  // Applied synchronously and with no opacity transition: a requestAnimationFrame or a
+  // CSS transition would never run in a hidden/backgrounded tab, leaving the outline
+  // permanently invisible. wGhostGen only guards the timers below against a newer character.
+  const gen = ++wGhostGen;
+  if (wLevel === 1 || wLevel === 2) {
     ghost.classList.add('visible');
-    setTimeout(() => { if (!wAnswered && wLevel === 2) ghost.classList.remove('visible'); }, 3000);
+    if (wLevel === 2) {
+      setTimeout(() => {
+        if (gen === wGhostGen && !wAnswered && wLevel === 2) ghost.classList.remove('visible');
+      }, 3000);
+    }
   }
 
   const file = `audio/consonants/c-${num}.mp3`;
@@ -2168,8 +2192,8 @@ function writeCheck() {
   meter.className = 'write-meter-fill ' + (passed ? 'pass' : 'fail');
 
   const fb = document.getElementById('w-feedback');
-  wCanvas.classList.remove('pass', 'fail');
-  wCanvas.classList.add(passed ? 'pass' : 'fail');
+  wrap.classList.remove('pass', 'fail');
+  wrap.classList.add(passed ? 'pass' : 'fail');
 
   if (passed) {
     wAnswered = true;
