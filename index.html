@@ -442,28 +442,25 @@ body::before {
 .card.digraph { border-color: rgba(160,140,200,0.4); }
 .card.independent { border-color: rgba(110,180,160,0.4); }
 
-/* WRITE */
+/* WRITE — a practice pad, not a quiz: no scoring, free navigation */
 .write-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .write-prompt { display: flex; align-items: center; justify-content: center; gap: 16px; }
 .write-prompt-text { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
 .write-roman { font-size: 26px; letter-spacing: 0.12em; color: var(--text); line-height: 1; }
-.write-roman.hidden-prompt { color: var(--muted); font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; }
 .write-sublabel { font-size: 9px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
 /* smaller, inline play button here — the quiz keeps the full-size one */
 #panel-write .play-btn { width: 46px; height: 46px; flex: none; }
 #panel-write .play-icon { font-size: 15px; }
+
 /* The surface/border live on the WRAPPER, not the canvas. An opaque canvas painted after
-   the ghost in DOM order hid the outline completely, so Peek/Trace/Fading all looked dead. */
+   the ghost in DOM order hid the outline completely, so the outline looked dead. */
 .write-canvas-wrap {
   position: relative; width: 100%; max-width: min(340px, 40vh); aspect-ratio: 1;
   background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
   overflow: hidden;
 }
-.write-canvas-wrap.pass { border-color: var(--correct); }
-.write-canvas-wrap.fail { border-color: var(--wrong); }
-/* Optional proportion guide: quarter grid plus a stronger centre cross. Drawn as wrapper
-   background layers, so it sits below the ghost and the ink canvas and can never end up in
-   the offscreen masks the scorer reads. */
+/* Optional proportion guide: quarter grid plus a stronger centre cross, as wrapper
+   background layers so it stays below the ghost and the ink. */
 .write-canvas-wrap.grid {
   background-image:
     linear-gradient(to right, transparent calc(50% - 0.5px), var(--grid-strong) calc(50% - 0.5px),
@@ -475,7 +472,8 @@ body::before {
   background-size: 100% 100%, 100% 100%, 25% 25%, 25% 25%;
   background-repeat: no-repeat, no-repeat, repeat, repeat;
 }
-.write-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+/* No opacity transition and nothing scheduled via requestAnimationFrame: in a hidden or
+   backgrounded tab neither runs, which once left the outline stuck invisible forever. */
 .write-ghost {
   position: absolute; inset: 0; z-index: 1;
   display: flex; align-items: center; justify-content: center;
@@ -483,11 +481,12 @@ body::before {
   pointer-events: none; user-select: none; opacity: 0;
 }
 .write-ghost.visible { opacity: 0.2; }
-.write-ghost.reveal { opacity: 0.45; color: var(--correct); }
+.write-ghost.reveal { opacity: 0.5; color: var(--accent); }
 .write-canvas {
   position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%;
   background: transparent; touch-action: none; cursor: crosshair;
 }
+.write-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
 .write-tool-btn {
   background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--muted);
   font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase;
@@ -495,20 +494,14 @@ body::before {
 }
 .write-tool-btn:hover { color: var(--text); border-color: var(--muted); }
 .write-tool-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
-.write-check-btn {
+.write-nav { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.write-nav-btn {
   background: none; border: 1px solid var(--accent); color: var(--accent);
-  font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
-  padding: 10px 34px; border-radius: 4px; cursor: pointer; transition: background 0.2s, opacity 0.2s;
+  font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  padding: 10px 22px; border-radius: 4px; cursor: pointer; transition: background 0.2s;
 }
-.write-check-btn:hover { background: var(--accent-dim); }
-.write-check-btn:disabled { opacity: 0.3; cursor: default; }
-.write-feedback { font-size: 11px; letter-spacing: 0.12em; min-height: 18px; text-align: center; color: var(--muted); }
-.write-feedback.pass { color: var(--correct); }
-.write-feedback.fail { color: var(--wrong); }
-.write-meter { width: 100%; max-width: min(340px, 40vh); height: 2px; background: var(--border); border-radius: 2px; overflow: hidden; }
-.write-meter-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.4s, background 0.3s; }
-.write-meter-fill.pass { background: var(--correct); }
-.write-meter-fill.fail { background: var(--wrong); }
+.write-nav-btn:hover { background: var(--accent-dim); }
+.write-count { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); min-width: 54px; text-align: center; }
 
 /* MOBILE */
 @media (max-width: 700px) {
@@ -710,49 +703,16 @@ body::before {
 
     <!-- WRITE -->
     <div class="panel" id="panel-write">
-
-      <!-- LEVEL SELECT -->
-      <div class="level-select" id="write-level-select">
-        <div class="level-select-label">Select mode</div>
-        <div class="level-grid">
-          <div class="level-card" onclick="startWrite(1)">
-            <span class="level-name">Trace</span>
-            <span class="level-detail">outline shown</span>
-          </div>
-          <div class="level-card" onclick="startWrite(2)">
-            <span class="level-name">Fading</span>
-            <span class="level-detail">outline 3s</span>
-          </div>
-          <div class="level-card" onclick="startWrite(3)">
-            <span class="level-name">Recall</span>
-            <span class="level-detail">blank canvas</span>
-          </div>
-          <div class="level-card" onclick="startWrite(4)">
-            <span class="level-name">Blind</span>
-            <span class="level-detail">audio only</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- ACTIVE -->
-      <div class="write-wrap" id="write-active" style="display:none">
-        <div class="score-bar">
-          <div>Q <span id="w-num">1</span> / <span id="w-total">33</span></div>
-          <div>✓ <span id="w-correct">0</span></div>
-          <div>✗ <span id="w-wrong">0</span></div>
-          <div>⏱ <span id="w-timer">0:00</span></div>
-          <button class="change-level-btn" onclick="showWriteLevelSelect()">Change mode</button>
-        </div>
-        <div class="progress-track"><div class="progress-fill" id="w-progress" style="width:0%"></div></div>
+      <div class="write-wrap" id="write-active">
 
         <div class="write-prompt">
           <button class="play-btn" id="w-play-btn">
-            <span class="play-icon">▶</span>
+            <span class="play-icon">&#9654;</span>
             <span class="play-wave"><span></span><span></span><span></span><span></span><span></span></span>
           </button>
           <div class="write-prompt-text">
             <div class="write-roman" id="w-roman">ka</div>
-            <div class="write-sublabel" id="w-sublabel">write this character</div>
+            <div class="write-sublabel">practise writing</div>
           </div>
         </div>
 
@@ -761,28 +721,18 @@ body::before {
           <canvas class="write-canvas" id="w-canvas"></canvas>
         </div>
 
-        <div class="write-meter"><div class="write-meter-fill" id="w-meter"></div></div>
-        <div class="write-feedback" id="w-feedback"></div>
-
         <div class="write-actions">
           <button class="write-tool-btn" onclick="writeUndo()">Undo</button>
           <button class="write-tool-btn" onclick="writeClear()">Clear</button>
-          <button class="write-tool-btn" id="w-peek-btn" onclick="writePeek()">Peek</button>
+          <button class="write-tool-btn" id="w-outline-btn" onclick="writeToggleOutline()">Outline</button>
           <button class="write-tool-btn" id="w-grid-btn" onclick="writeToggleGrid()">Grid</button>
-          <button class="write-check-btn" id="w-check-btn" onclick="writeCheck()">Check</button>
+          <button class="write-tool-btn" id="w-reveal-btn" onclick="writeToggleReveal()">Reveal</button>
         </div>
-        <button class="next-btn" id="w-next-btn" onclick="writeNext()">Next →</button>
-      </div>
 
-      <!-- RESULTS -->
-      <div class="results" id="write-results">
-        <div class="results-label">Session Complete</div>
-        <div class="results-score" id="w-res-score"></div>
-        <div class="results-detail" id="w-res-detail"></div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
-          <button class="restart-btn" onclick="restartWrite()">Try Again</button>
-          <button class="restart-btn" id="w-retry-wrong-btn" onclick="writeRetryWrong()" style="display:none;border-color:var(--wrong);color:var(--wrong);">Retry Missed</button>
-          <button class="restart-btn" onclick="showWriteLevelSelect()">Change Mode</button>
+        <div class="write-nav">
+          <button class="write-nav-btn" onclick="writePrev()">&larr; Prev</button>
+          <span class="write-count" id="w-count">1 / 33</span>
+          <button class="write-nav-btn" onclick="writeNext()">Next &rarr;</button>
         </div>
       </div>
     </div>
@@ -1768,137 +1718,83 @@ function onDictSearch(val) {
   if (!val.trim()) { results.classList.remove('visible'); return; }
   showDictResults(val.trim(), dictData.filter(e => e.w.includes(val.trim())), true);
 }
-// ── WRITE (shape-recall tracing) ──
-// Scoring compares two rasterised masks in a normalised square:
-//   precision = user ink landing on the target (dilated by W_TOL_PX) → penalises spill
-//   recall    = target covered by the ink, widened to the glyph's own stroke thickness
-//   score     = min(precision, recall) — you must both stay on the letter AND cover it
-//
-// recall must widen the ink, because a pen tracing the CENTRELINE of a limb cannot paint a
-// limb thicker than itself: glyph strokes here are 15–29px against a 9px pen, so an ideal
-// centreline trace capped out at recall 0.30–0.58 and failed. The widening is derived from
-// each glyph's measured thickness rather than a fixed fudge, and precision still uses the
-// UNdilated ink so spill is punished. Discrimination between similar letters is the
-// competitive gate's job (see wScore), which is why the absolute bar can be forgiving.
-// Tuning knobs:
-const W_RES        = 256;   // mask resolution (px, square)
-const W_INK        = 0.045; // on-screen pen width, fraction of the drawing box
-const W_INK_CANON  = 9;     // pen width inside the canonical frame (px)
-const W_TOL_PX     = 8;     // precision tolerance: how far outside the glyph ink may stray
-const W_PASS       = 0.58;  // absolute score needed
-const W_MARGIN     = 0.04;  // how far below the best-matching rival letter is still allowed
-const W_MIN_EXTENT = 0.18;  // reject drawings smaller than this fraction of the box
-const W_GLYPH_PX   = 190;   // font size used to rasterise the target into W_RES
+// ── WRITE (practice pad) ──
+// Deliberately not a quiz: nothing is scored and nothing gates navigation. The 33
+// consonants are shuffled once and you move through them at your own pace.
+const W_INK = 0.045;   // on-screen pen width, fraction of the drawing box
 
-let wQueue = [], wCurrent = 0, wLevel = 3;
-let wCorrect = 0, wWrong = 0, wMissed = [];
-let wStrokes = [], wActiveStroke = null, wAnswered = false;
-let wTimerInterval = null, wStartTime = 0;
-let wCanvas = null, wCtx = null, wDpr = 1;
-let wFontReady = false;
-let wPeekTimer = null, wGhostGen = 0;
-// remembered between sessions — re-enabling a drawing guide every visit is a nuisance
-let wGridOn = (() => { try { return localStorage.getItem('lk-write-grid') === '1'; } catch (e) { return false; } })();
-const wMaskCanvas = document.createElement('canvas');
-const wUserCanvas = document.createElement('canvas');
+let wQueue = [], wCurrent = 0;
+let wStrokes = [], wActiveStroke = null, wActivePointer = null;
+let wCanvas = null, wCtx = null, wDpr = 1, wLastW = 0, wLastH = 0;
+let wRevealOn = false;
 const wAudioEl = new Audio();
 wAudioEl.preload = 'auto';
 
+// remembered between visits — re-enabling drawing aids every session is a nuisance
+const wPref = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v === '1'; } catch (e) { return d; } };
+const wSavePref = (k, v) => { try { localStorage.setItem(k, v ? '1' : '0'); } catch (e) {} };
+let wGridOn = wPref('lk-write-grid', false);
+let wOutlineOn = wPref('lk-write-outline', true);
+
 function initWrite() {
-  // reset the view synchronously — awaiting the font here would let a mode the user
-  // picked in the meantime get clobbered when the promise resolved
-  showWriteLevelSelect();
-  wEnsureFont();
-}
-
-// Masks rasterised before the Khmer face loads would silently use a fallback font,
-// so any cached before it's ready are discarded.
-async function wEnsureFont() {
-  if (wFontReady) return;
-  try {
-    await document.fonts.load(`${W_GLYPH_PX}px "Noto Serif Khmer"`);
-    await document.fonts.ready;
-  } catch (e) {}
-  wFontReady = true;
-  wGlyphCache.clear();
-}
-
-function showWriteLevelSelect() {
-  wAudioEl.pause();
-  wStopTimer();
-  document.getElementById('w-timer').textContent = '0:00';
-  document.getElementById('write-level-select').style.display = 'flex';
-  document.getElementById('write-active').style.display = 'none';
-  document.getElementById('write-results').classList.remove('show');
-}
-
-function startWrite(level) {
-  if (level) wLevel = level;
-  wQueue = shuffle(consonants.map((c, i) => ({ ...c, index: i })));
-  wCurrent = 0; wCorrect = 0; wWrong = 0; wMissed = [];
-  document.getElementById('write-level-select').style.display = 'none';
-  document.getElementById('write-results').classList.remove('show');
-  document.getElementById('write-active').style.display = 'flex';
+  if (!wQueue.length) wQueue = shuffle(consonants.map((c, i) => ({ ...c, index: i })));
   wSetupCanvas();
-  wApplyGrid();
-  wStartTimer();
+  wSyncCanvasSize();
+  wApplyToggles();
   wLoad();
 }
 
-function restartWrite() { startWrite(wLevel); }
-
-function writeRetryWrong() {
-  const missed = wMissed.slice();
-  if (!missed.length) return;
-  wQueue = shuffle(missed.map(c => ({ ...c, index: consonants.findIndex(x => x.khmer === c.khmer) })));
-  wCurrent = 0; wCorrect = 0; wWrong = 0; wMissed = [];
-  document.getElementById('write-results').classList.remove('show');
-  document.getElementById('write-active').style.display = 'flex';
-  wSetupCanvas();
-  wApplyGrid();
-  wStartTimer();
-  wLoad();
-}
+// ── canvas + pointer ──
 
 function wSetupCanvas() {
   if (wCanvas) return;
   wCanvas = document.getElementById('w-canvas');
   wCtx = wCanvas.getContext('2d');
-  wResizeCanvas();
-  window.addEventListener('resize', wResizeCanvas);
+  window.addEventListener('resize', wSyncCanvasSize);
+  window.addEventListener('orientationchange', wSyncCanvasSize);
 
+  // One pointer owns the stroke. Without this a resting palm or second finger appends
+  // into the same array (zig-zag garbage) and any finger lifting kills the live stroke.
   wCanvas.addEventListener('pointerdown', e => {
-    if (wAnswered) return;
-    wCanvas.setPointerCapture(e.pointerId);
+    if (wActivePointer !== null) return;
+    wActivePointer = e.pointerId;
+    try { wCanvas.setPointerCapture(e.pointerId); } catch (err) {}
     wActiveStroke = [wPoint(e)];
     wStrokes.push(wActiveStroke);
     wRedraw();
   });
   wCanvas.addEventListener('pointermove', e => {
-    if (!wActiveStroke) return;
+    if (e.pointerId !== wActivePointer || !wActiveStroke) return;
     const p = wPoint(e);
     const last = wActiveStroke[wActiveStroke.length - 1];
     if (Math.hypot(p.x - last.x, p.y - last.y) < 1.5) return;
     wActiveStroke.push(p);
     wRedraw();
   });
-  const end = () => { wActiveStroke = null; wUpdateCheckState(); };
+  const end = e => {
+    if (e.pointerId !== wActivePointer) return;
+    wActivePointer = null;
+    wActiveStroke = null;
+  };
   wCanvas.addEventListener('pointerup', end);
   wCanvas.addEventListener('pointercancel', end);
-  wCanvas.addEventListener('pointerleave', end);
 }
 
-function wResizeCanvas() {
+// Re-measures whenever the box has actually changed size. The old version bailed out while
+// the panel was hidden and never re-ran, so a rotation or a collapsing mobile URL bar left
+// a stale backing store: ink landed offset from the finger and survived Clear.
+function wSyncCanvasSize() {
   if (!wCanvas) return;
   const rect = wCanvas.getBoundingClientRect();
-  if (!rect.width) return;
-  wDpr = window.devicePixelRatio || 1;
-  wCanvas.width = Math.round(rect.width * wDpr);
-  wCanvas.height = Math.round(rect.height * wDpr);
+  if (!rect.width || !rect.height) return;
+  const dpr = window.devicePixelRatio || 1;
+  if (rect.width === wLastW && rect.height === wLastH && dpr === wDpr) return;
+  wLastW = rect.width; wLastH = rect.height; wDpr = dpr;
+  wCanvas.width = Math.round(rect.width * dpr);
+  wCanvas.height = Math.round(rect.height * dpr);
   wRedraw();
 }
 
-// pointer → CSS-pixel coords relative to the canvas box
 function wPoint(e) {
   const r = wCanvas.getBoundingClientRect();
   return { x: e.clientX - r.left, y: e.clientY - r.top };
@@ -1906,23 +1802,23 @@ function wPoint(e) {
 
 function wRedraw() {
   if (!wCtx) return;
-  const r = wCanvas.getBoundingClientRect();
+  const w = wLastW, h = wLastH;
+  if (!w || !h) return;
   wCtx.setTransform(wDpr, 0, 0, wDpr, 0, 0);
-  wCtx.clearRect(0, 0, r.width, r.height);
+  wCtx.clearRect(0, 0, w, h);
   wCtx.strokeStyle = '#e8e0d0';
-  wCtx.lineWidth = W_INK * Math.min(r.width, r.height);
+  wCtx.fillStyle = '#e8e0d0';
+  wCtx.lineWidth = W_INK * Math.min(w, h);
   wCtx.lineCap = 'round';
   wCtx.lineJoin = 'round';
   wStrokes.forEach(s => {
-    if (s.length < 2) {
-      if (s.length === 1) { // lone tap → dot
-        wCtx.beginPath();
-        wCtx.arc(s[0].x, s[0].y, wCtx.lineWidth / 2, 0, Math.PI * 2);
-        wCtx.fillStyle = '#e8e0d0';
-        wCtx.fill();
-      }
+    if (s.length === 1) {
+      wCtx.beginPath();
+      wCtx.arc(s[0].x, s[0].y, wCtx.lineWidth / 2, 0, Math.PI * 2);
+      wCtx.fill();
       return;
     }
+    if (s.length < 2) return;
     wCtx.beginPath();
     wCtx.moveTo(s[0].x, s[0].y);
     for (let i = 1; i < s.length; i++) wCtx.lineTo(s[i].x, s[i].y);
@@ -1930,112 +1826,83 @@ function wRedraw() {
   });
 }
 
+// ── tools ──
+
 function writeClear() {
-  wStrokes = []; wActiveStroke = null;
+  wStrokes = []; wActiveStroke = null; wActivePointer = null;
   wRedraw();
-  wUpdateCheckState();
-  document.querySelector('.write-canvas-wrap').classList.remove('pass', 'fail');
-  document.getElementById('w-meter').style.width = '0%';
-  document.getElementById('w-meter').className = 'write-meter-fill';
-  if (!wAnswered) document.getElementById('w-feedback').textContent = '';
 }
 
 function writeUndo() {
-  if (wAnswered) return;
   wStrokes.pop();
   wRedraw();
-  wUpdateCheckState();
-}
-
-// Flash the outline briefly. Guards: in Trace mode the outline is already permanent, so
-// the timeout below would have *hidden* it; and a second click must not let the first
-// click's timer cut the peek short.
-function writePeek() {
-  if (wLevel === 1 || wAnswered) return;
-  const ghost = document.getElementById('w-ghost');
-  clearTimeout(wPeekTimer);
-  wGhostGen++;                       // cancel any pending scheduled reveal
-  ghost.classList.add('visible');
-  wPeekTimer = setTimeout(() => {
-    if (!wAnswered && wLevel !== 1) ghost.classList.remove('visible');
-  }, 1100);
 }
 
 function writeToggleGrid() {
   wGridOn = !wGridOn;
-  try { localStorage.setItem('lk-write-grid', wGridOn ? '1' : '0'); } catch (e) {}
-  wApplyGrid();
+  wSavePref('lk-write-grid', wGridOn);
+  wApplyToggles();
 }
 
-function wApplyGrid() {
+function writeToggleOutline() {
+  wOutlineOn = !wOutlineOn;
+  wSavePref('lk-write-outline', wOutlineOn);
+  wApplyToggles();
+}
+
+// Reveal is per-character rather than a saved preference: it is for comparing a finished
+// attempt against the real letter, so it resets when you move on.
+function writeToggleReveal() {
+  wRevealOn = !wRevealOn;
+  wApplyToggles();
+}
+
+function wApplyToggles() {
   const wrap = document.querySelector('.write-canvas-wrap');
   if (wrap) wrap.classList.toggle('grid', wGridOn);
-  const btn = document.getElementById('w-grid-btn');
-  if (btn) btn.classList.toggle('active', wGridOn);
+  const ghost = document.getElementById('w-ghost');
+  if (ghost) {
+    ghost.classList.toggle('reveal', wRevealOn);
+    ghost.classList.toggle('visible', wOutlineOn && !wRevealOn);
+  }
+  const set = (id, on) => { const b = document.getElementById(id); if (b) b.classList.toggle('active', on); };
+  set('w-grid-btn', wGridOn);
+  set('w-outline-btn', wOutlineOn);
+  set('w-reveal-btn', wRevealOn);
 }
 
-function wUpdateCheckState() {
-  document.getElementById('w-check-btn').disabled = wStrokes.length === 0 || wAnswered;
-}
+// ── navigation ──
 
 function wLoad() {
-  wAnswered = false;
-  wStrokes = []; wActiveStroke = null;
   const q = wQueue[wCurrent];
   const num = String(q.index + 1).padStart(2, '0');
-
-  document.getElementById('w-num').textContent = wCurrent + 1;
-  document.getElementById('w-total').textContent = wQueue.length;
-  document.getElementById('w-correct').textContent = wCorrect;
-  document.getElementById('w-wrong').textContent = wWrong;
-  document.getElementById('w-progress').style.width = (wCurrent / wQueue.length * 100) + '%';
-  document.getElementById('w-feedback').textContent = '';
-  document.getElementById('w-feedback').className = 'write-feedback';
-  document.getElementById('w-meter').style.width = '0%';
-  document.getElementById('w-meter').className = 'write-meter-fill';
-  document.getElementById('w-next-btn').classList.remove('visible');
-  document.querySelector('.write-canvas-wrap').classList.remove('pass', 'fail');
-
-  // prompt: Blind mode hides the romanisation entirely
-  const roman = document.getElementById('w-roman');
-  if (wLevel === 4) {
-    roman.textContent = 'listen';
-    roman.className = 'write-roman hidden-prompt';
-    document.getElementById('w-sublabel').textContent = 'write what you hear';
-  } else {
-    roman.textContent = q.roman;
-    roman.className = 'write-roman';
-    document.getElementById('w-sublabel').textContent = 'write this character';
-  }
-
-  // ghost outline per level
   const ghost = document.getElementById('w-ghost');
-  clearTimeout(wPeekTimer);
-  ghost.className = 'write-ghost';
+
+  document.getElementById('w-roman').textContent = q.roman;
+  document.getElementById('w-count').textContent = `${wCurrent + 1} / ${wQueue.length}`;
   ghost.textContent = q.khmer;
   ghost.style.fontSize = Math.round(document.querySelector('.write-canvas-wrap').clientWidth * 0.62) + 'px';
-  // Peek is meaningless while the outline is permanently shown
-  document.getElementById('w-peek-btn').style.display = wLevel === 1 ? 'none' : '';
 
-  // Applied synchronously and with no opacity transition: a requestAnimationFrame or a
-  // CSS transition would never run in a hidden/backgrounded tab, leaving the outline
-  // permanently invisible. wGhostGen only guards the timers below against a newer character.
-  const gen = ++wGhostGen;
-  if (wLevel === 1 || wLevel === 2) {
-    ghost.classList.add('visible');
-    if (wLevel === 2) {
-      setTimeout(() => {
-        if (gen === wGhostGen && !wAnswered && wLevel === 2) ghost.classList.remove('visible');
-      }, 3000);
-    }
-  }
+  wRevealOn = false;
+  wApplyToggles();
+  writeClear();
 
   const file = `audio/consonants/c-${num}.mp3`;
   document.getElementById('w-play-btn').onclick = () => wPlay(file);
-  if (wLevel === 4) wPlay(file);
+}
 
-  wRedraw();
-  wUpdateCheckState();
+function writeNext() {
+  wCurrent++;
+  if (wCurrent >= wQueue.length) {   // wrap around, reshuffled, so it never dead-ends
+    wQueue = shuffle(consonants.map((c, i) => ({ ...c, index: i })));
+    wCurrent = 0;
+  }
+  wLoad();
+}
+
+function writePrev() {
+  wCurrent = wCurrent > 0 ? wCurrent - 1 : wQueue.length - 1;
+  wLoad();
 }
 
 function wPlay(file) {
@@ -2043,284 +1910,8 @@ function wPlay(file) {
   wAudioEl.pause();
   if (!wAudioEl.src.endsWith(file)) wAudioEl.src = file;
   wAudioEl.currentTime = 0;
-  wAudioEl.play().then(() => {
-    btn.classList.add('playing');
-  }).catch(() => {});
+  wAudioEl.play().then(() => btn.classList.add('playing')).catch(() => {});
   wAudioEl.onended = () => btn.classList.remove('playing');
-}
-
-// ── rasterise + score ──
-// Everything is compared inside ONE canonical frame (W_BOX inside a W_RES square):
-// the user's ink and every candidate glyph are uniform-fit into the same box. Normalising
-// per-candidate instead let each letter re-fit the drawing to itself, which inflated
-// non-target scores and misranked ~30% of correct attempts.
-const W_BOX = { x: 28, y: 28, w: 200, h: 200 };
-
-const wTmpCanvas = document.createElement('canvas');
-const wCanonCanvas = document.createElement('canvas');
-wTmpCanvas.width = wTmpCanvas.height = W_RES;
-wCanonCanvas.width = wCanonCanvas.height = W_RES;
-const wGlyphCache = new Map();
-
-// alpha channel → binary mask + ink bounding box
-function wExtract(ctx) {
-  const img = ctx.getImageData(0, 0, W_RES, W_RES).data;
-  const data = new Uint8Array(W_RES * W_RES);
-  let minX = W_RES, minY = W_RES, maxX = -1, maxY = -1, count = 0;
-  for (let y = 0; y < W_RES; y++) {
-    for (let x = 0; x < W_RES; x++) {
-      const i = y * W_RES + x;
-      if (img[i * 4 + 3] > 80) {
-        data[i] = 1; count++;
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
-    }
-  }
-  const box = maxX < 0 ? null : { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
-  return { data, box, count };
-}
-
-// separable box dilation (max filter) — used to widen the target's allowed zone
-function wDilate(mask, r) {
-  if (r <= 0) return mask;
-  const a = mask.data, mid = new Uint8Array(W_RES * W_RES), out = new Uint8Array(W_RES * W_RES);
-  for (let y = 0; y < W_RES; y++) {
-    for (let x = 0; x < W_RES; x++) {
-      let v = 0;
-      for (let k = -r; k <= r; k++) { const xx = x + k; if (xx >= 0 && xx < W_RES && a[y * W_RES + xx]) { v = 1; break; } }
-      mid[y * W_RES + x] = v;
-    }
-  }
-  for (let y = 0; y < W_RES; y++) {
-    for (let x = 0; x < W_RES; x++) {
-      let v = 0;
-      for (let k = -r; k <= r; k++) { const yy = y + k; if (yy >= 0 && yy < W_RES && mid[yy * W_RES + x]) { v = 1; break; } }
-      out[y * W_RES + x] = v;
-    }
-  }
-  return { data: out, count: 0, box: mask.box };
-}
-
-// glyph rendered, then uniform-fit into the canonical box. Cached — static per character.
-function wGlyphMask(char) {
-  if (wGlyphCache.has(char)) return wGlyphCache.get(char);
-  const t = wTmpCanvas.getContext('2d');
-  t.clearRect(0, 0, W_RES, W_RES);
-  t.fillStyle = '#fff';
-  t.textAlign = 'center';
-  t.textBaseline = 'middle';
-  t.font = `${W_GLYPH_PX}px "Noto Serif Khmer", serif`;
-  t.fillText(char, W_RES / 2, W_RES / 2);
-  const raw = wExtract(t);
-  if (!raw.box) { wGlyphCache.set(char, null); return null; }
-
-  const s = Math.min(W_BOX.w / raw.box.w, W_BOX.h / raw.box.h);
-  const dw = raw.box.w * s, dh = raw.box.h * s;
-  const c = wCanonCanvas.getContext('2d');
-  c.clearRect(0, 0, W_RES, W_RES);
-  c.drawImage(wTmpCanvas, raw.box.x, raw.box.y, raw.box.w, raw.box.h,
-              W_BOX.x + (W_BOX.w - dw) / 2, W_BOX.y + (W_BOX.h - dh) / 2, dw, dh);
-  const mask = wExtract(c);
-  const dilated = wDilate(mask, W_TOL_PX);
-  // How far the ink must be widened for the recall term to be fair: enough to fill a limb
-  // of this glyph's thickness when drawn down its centre.
-  const thick = wThickness(mask);
-  const recallRadius = Math.max(0, Math.round((thick - W_INK_CANON) / 2));
-  const entry = { mask, dilated, thick, recallRadius };
-  wGlyphCache.set(char, entry);
-  return entry;
-}
-
-// Mean stroke thickness. For a ribbon of width w and length L, area = wL and perimeter ≈ 2L,
-// so 2*area/perimeter ≈ w — cheap and stable enough for glyph limbs.
-function wThickness(mask) {
-  let perimeter = 0;
-  for (let y = 0; y < W_RES; y++) {
-    for (let x = 0; x < W_RES; x++) {
-      const i = y * W_RES + x;
-      if (!mask.data[i]) continue;
-      if (x === 0 || x === W_RES - 1 || y === 0 || y === W_RES - 1 ||
-          !mask.data[i - 1] || !mask.data[i + 1] || !mask.data[i - W_RES] || !mask.data[i + W_RES]) perimeter++;
-    }
-  }
-  return 2 * mask.count / Math.max(perimeter, 1);
-}
-
-// the user's strokes, uniform-fit into the same canonical box
-function wUserMask() {
-  const b = wStrokeBox();
-  if (!b) return null;
-  const bw = Math.max(b.w, 1), bh = Math.max(b.h, 1);
-  const s = Math.min(W_BOX.w / bw, W_BOX.h / bh);
-  const ox = W_BOX.x + W_BOX.w / 2 - (b.x + bw / 2) * s;
-  const oy = W_BOX.y + W_BOX.h / 2 - (b.y + bh / 2) * s;
-
-  const c = wCanonCanvas.getContext('2d');
-  c.clearRect(0, 0, W_RES, W_RES);
-  c.strokeStyle = c.fillStyle = '#fff';
-  c.lineCap = c.lineJoin = 'round';
-  c.lineWidth = Math.max(2, W_INK_CANON * s);
-  wStrokes.forEach(k => {
-    if (k.length === 1) {
-      c.beginPath();
-      c.arc(k[0].x * s + ox, k[0].y * s + oy, c.lineWidth / 2, 0, Math.PI * 2);
-      c.fill();
-      return;
-    }
-    if (k.length < 2) return;
-    c.beginPath();
-    c.moveTo(k[0].x * s + ox, k[0].y * s + oy);
-    for (let i = 1; i < k.length; i++) c.lineTo(k[i].x * s + ox, k[i].y * s + oy);
-    c.stroke();
-  });
-  return wExtract(c);
-}
-
-// bounding box of the user's raw strokes, in CSS pixels
-function wStrokeBox() {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity, n = 0;
-  wStrokes.forEach(s => s.forEach(p => {
-    n++;
-    if (p.x < minX) minX = p.x;
-    if (p.x > maxX) maxX = p.x;
-    if (p.y < minY) minY = p.y;
-    if (p.y > maxY) maxY = p.y;
-  }));
-  if (!n) return null;
-  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
-}
-
-// `ink` is the raw mask (precision), `inkWidened` the same ink dilated to this glyph's
-// stroke thickness (recall). Passing both in lets callers reuse one widened mask across
-// every candidate that needs the same radius.
-function wCompare(ink, inkWidened, entry) {
-  if (!entry || !ink || !ink.count || !entry.mask.count) return null;
-  let onTarget = 0, covered = 0;
-  for (let i = 0; i < W_RES * W_RES; i++) {
-    if (ink.data[i] && entry.dilated.data[i]) onTarget++;
-    if (entry.mask.data[i] && inkWidened.data[i]) covered++;
-  }
-  const precision = onTarget / ink.count;
-  const recall = covered / entry.mask.count;
-  return { precision, recall, score: Math.min(precision, recall) };
-}
-
-// score the drawing against `char`, and against every other consonant so we can tell
-// "you drew a letter, but not this one" apart from "you drew nothing like a letter"
-function wScore(char) {
-  const ink = wUserMask();
-  if (!ink || !ink.count) return null;
-
-  // radii repeat across glyphs, so dilate once per distinct radius rather than 33 times
-  const widened = new Map();
-  const widen = r => {
-    if (!widened.has(r)) widened.set(r, r > 0 ? wDilate(ink, r) : ink);
-    return widened.get(r);
-  };
-  const against = ch => {
-    const entry = wGlyphMask(ch);
-    return entry ? wCompare(ink, widen(entry.recallRadius), entry) : null;
-  };
-
-  const self = against(char);
-  if (!self) return null;
-  let best = null;
-  for (const c of consonants) {
-    if (c.khmer === char) continue;
-    const r = against(c.khmer);
-    if (r && (!best || r.score > best.score)) best = { khmer: c.khmer, score: r.score };
-  }
-  return { precision: self.precision, recall: self.recall, score: self.score, rival: best };
-}
-
-function writeCheck() {
-  if (wAnswered || !wStrokes.length) return;
-  const q = wQueue[wCurrent];
-  const wrap = document.querySelector('.write-canvas-wrap');
-
-  // reject drawings too small to be a real attempt
-  const box = wStrokeBox();
-  const minDim = Math.min(wrap.clientWidth, wrap.clientHeight);
-  if (!box || Math.max(box.w, box.h) < minDim * W_MIN_EXTENT) {
-    const fb = document.getElementById('w-feedback');
-    fb.textContent = 'too small — use more of the box';
-    fb.className = 'write-feedback fail';
-    return;
-  }
-
-  const res = wScore(q.khmer);
-  if (!res) return;
-
-  const pct = Math.round(res.score * 100);
-  // two gates: close enough in absolute terms, AND not clearly a better match for
-  // some other letter (ត/ព, ថ/ភ etc. differ by details area-overlap alone can't resolve)
-  const outranked = res.rival && res.rival.score > res.score + W_MARGIN;
-  const passed = res.score >= W_PASS && !outranked;
-
-  const meter = document.getElementById('w-meter');
-  meter.style.width = Math.min(100, pct) + '%';
-  meter.className = 'write-meter-fill ' + (passed ? 'pass' : 'fail');
-
-  const fb = document.getElementById('w-feedback');
-  wrap.classList.remove('pass', 'fail');
-  wrap.classList.add(passed ? 'pass' : 'fail');
-
-  if (passed) {
-    wAnswered = true;
-    wCorrect++;
-    fb.textContent = `${pct}% match — ${q.khmer} ${q.roman}`;
-    fb.className = 'write-feedback pass';
-    document.getElementById('w-ghost').className = 'write-ghost reveal';
-    document.getElementById('w-correct').textContent = wCorrect;
-    document.getElementById('w-next-btn').classList.add('visible');
-    wUpdateCheckState();
-  } else {
-    // not answered — they stay on this character and retry
-    const hint = outranked
-      ? `that reads more like ${res.rival.khmer}`
-      : res.recall < res.precision ? 'incomplete — parts are missing' : 'too much outside the shape';
-    fb.textContent = `${pct}% — ${hint}`;
-    fb.className = 'write-feedback fail';
-    if (!wMissed.some(m => m.khmer === q.khmer)) {
-      wMissed.push(q);
-      wWrong++;
-      document.getElementById('w-wrong').textContent = wWrong;
-    }
-  }
-}
-
-function writeNext() {
-  wCurrent++;
-  if (wCurrent >= wQueue.length) return wFinish();
-  document.getElementById('w-ghost').className = 'write-ghost';
-  wLoad();
-}
-
-function wFinish() {
-  wStopTimer();
-  const elapsed = Date.now() - wStartTime;
-  document.getElementById('write-active').style.display = 'none';
-  const pct = Math.round(wCorrect / wQueue.length * 100);
-  document.getElementById('w-res-score').textContent = pct + '%';
-  document.getElementById('w-res-detail').textContent =
-    `${wCorrect} written · ${wMissed.length} needed retries · ${wQueue.length} total · ${formatTime(elapsed)}`;
-  document.getElementById('w-retry-wrong-btn').style.display = wMissed.length ? 'inline-block' : 'none';
-  document.getElementById('write-results').classList.add('show');
-}
-
-function wStartTimer() {
-  wStopTimer();
-  wStartTime = Date.now();
-  wTimerInterval = setInterval(() => {
-    document.getElementById('w-timer').textContent = formatTime(Date.now() - wStartTime);
-  }, 1000);
-}
-
-function wStopTimer() {
-  if (wTimerInterval) { clearInterval(wTimerInterval); wTimerInterval = null; }
 }
 
 // ── PARTICLES ──
