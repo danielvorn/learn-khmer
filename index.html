@@ -2,8 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>អក្សរខ្មែរ</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0e0e0e">
+<meta name="description" content="Learn the Khmer alphabet: letters, pronunciation, a dictionary and a handwriting practice pad.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Khmer">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Khmer:wght@400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -503,6 +512,14 @@ body::before {
 .write-nav-btn:hover { background: var(--accent-dim); }
 .write-count { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); min-width: 54px; text-align: center; }
 
+/* OFFLINE — only shown when the browser reports no connection */
+.offline-note {
+  display: none; border: 1px solid var(--wrong); background: var(--wrong-dim);
+  color: var(--text); border-radius: 6px; padding: 10px 12px; margin-bottom: 14px;
+  font-size: 10px; letter-spacing: 0.1em; line-height: 1.6;
+}
+body.is-offline .offline-note { display: block; }
+
 /* MOBILE */
 @media (max-width: 700px) {
   .sidebar { display: none; }
@@ -739,6 +756,7 @@ body::before {
 
     <!-- LISTEN -->
     <div class="panel" id="panel-listen">
+      <div class="offline-note">Listen needs a connection — it streams speech from a remote dataset. Everything else works offline.</div>
       <div class="listen-tabs">
         <button class="listen-tab active" id="ltab-phrases" onclick="switchListenTab('phrases', this)">Phrases</button>
         <button class="listen-tab" id="ltab-vocab" onclick="switchListenTab('vocab', this)">Vocabulary</button>
@@ -1962,6 +1980,53 @@ function wPlay(file) {
   init();
   draw();
 })();
+
+// ── OFFLINE ──
+// The Listen section streams random speech from a remote dataset, so it is the one part
+// that genuinely cannot work offline. Its fetches already fail silently, which just looks
+// broken — this says so instead.
+function updateOnlineState() {
+  document.body.classList.toggle('is-offline', !navigator.onLine);
+}
+window.addEventListener('online', updateOnlineState);
+window.addEventListener('offline', updateOnlineState);
+updateOnlineState();
+
+// The font files are requested from <head> long before the service worker can control the
+// page, so on a first visit they would miss the cache entirely and Khmer would fall back to
+// a face that cannot shape it. The worker cannot read the Google stylesheet to discover the
+// .woff2 URLs (no CORS), but the Resource Timing entries list them, so they are simply
+// re-requested once the worker is in charge and cached on the way through.
+async function cacheFontsOnce() {
+  // On a first visit the worker only takes over part-way through activation, so wait for it
+  // rather than bailing out — otherwise nothing here is ever cached until the next load.
+  if (!navigator.serviceWorker.controller) {
+    await new Promise(res => {
+      navigator.serviceWorker.addEventListener('controllerchange', res, { once: true });
+      setTimeout(res, 5000);
+    });
+  }
+  if (!navigator.serviceWorker.controller) return;
+  const urls = performance.getEntriesByType('resource')
+    .map(e => e.name)
+    .filter(u => u.includes('fonts.googleapis.com') || u.includes('fonts.gstatic.com'));
+  await Promise.allSettled(urls.map(u =>
+    // stylesheet links are no-cors anyway; font files must stay CORS so the cached
+    // response is still usable when the browser asks for the font itself
+    fetch(u, u.includes('gstatic') ? {} : { mode: 'no-cors' })
+  ));
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(async reg => {
+      // top up the audio cache on later visits too, not just the first activation
+      if (navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage('warm-audio');
+      await navigator.serviceWorker.ready;
+      await cacheFontsOnce();
+    }).catch(() => {});
+  });
+}
 
 </script>
 </body>
