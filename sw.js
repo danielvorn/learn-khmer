@@ -1,14 +1,15 @@
 /* Service worker for Learn Khmer.
  *
  * Strategy
- *   shell        precached on install, so the app opens offline after one online visit
- *   audio / json cache-first, filled in as used, plus a background warm-up of the audio
- *   fonts        cache-first (Google Fonts is a third party, so responses are opaque)
- *   Listen API   never cached — it is random remote speech data and must stay live
+ *   shell + fonts  precached on install, so the app opens offline after one online visit
+ *   audio          warmed in the background after activation, then served cache-first
+ *   dictionary     NEVER cached: 8.4MB is ~3x everything else combined, and a bundle that
+ *                  size is the first thing an OS evicts under storage pressure
+ *   Listen API     never cached — random remote speech data that must stay live
  *
  * Bump VERSION to invalidate everything.
  */
-const VERSION = 'lk-v1';
+const VERSION = 'lk-v2';
 const SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 
@@ -17,6 +18,10 @@ const SHELL_FILES = [
   './',
   './index.html',
   './manifest.webmanifest',
+  // self-hosted, so the Khmer face is guaranteed present offline rather than depending on
+  // whether a third-party request happened to be intercepted in time
+  './fonts/noto-serif-khmer-400.woff2',
+  './fonts/dm-mono-400-latin.woff2',
   './icon-192.png',
   './icon-512.png',
   './icon-maskable-512.png',
@@ -31,8 +36,8 @@ const AUDIO_FILES = [
   ...Array.from({ length: 10 }, (_, i) => `./audio/digraphs/d-${String(i + 1).padStart(2, '0')}.mp3`),
 ];
 
-const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
-const NEVER_CACHE = ['datasets-server.huggingface.co'];
+const NEVER_CACHE_HOSTS = ['datasets-server.huggingface.co'];
+const NEVER_CACHE_PATHS = ['/dictionary.json'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -72,7 +77,8 @@ self.addEventListener('fetch', event => {
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
-  if (NEVER_CACHE.some(h => url.hostname.endsWith(h))) return;   // straight to network
+  if (NEVER_CACHE_HOSTS.some(h => url.hostname.endsWith(h))) return;   // straight to network
+  if (NEVER_CACHE_PATHS.some(p => url.pathname.endsWith(p))) return;
 
   // Media: Safari asks for byte ranges, and handing it a whole cached body breaks
   // playback, so a range request is served as a real 206 slice out of the cache.
@@ -86,7 +92,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  if (FONT_HOSTS.includes(url.hostname) || url.origin === self.location.origin) {
+  if (url.origin === self.location.origin) {
     event.respondWith(cacheFirst(req));
   }
 });
@@ -96,8 +102,7 @@ async function cacheFirst(req) {
   if (hit) return hit;
   try {
     const res = await fetch(req);
-    // opaque cross-origin font responses have status 0 but are still usable
-    if (res && (res.ok || res.type === 'opaque')) {
+    if (res && res.ok) {
       const cache = await caches.open(RUNTIME);
       cache.put(req, res.clone());
     }
