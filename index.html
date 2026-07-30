@@ -440,46 +440,6 @@ body::before {
 .card.digraph { border-color: rgba(160,140,200,0.4); }
 .card.independent { border-color: rgba(110,180,160,0.4); }
 
-/* SING */
-.sing-wrap { display: flex; flex-direction: column; align-items: center; gap: 24px; padding-top: 8px; }
-.sing-filters { display: flex; gap: 6px; }
-.sing-filter-btn { background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; padding: 5px 12px; cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; }
-.sing-filter-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-.sing-next-btn { background: none; border: 1px solid var(--accent); color: var(--accent); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; padding: 10px 32px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
-.sing-next-btn:hover { background: var(--accent-dim); }
-.sing-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: border-color 0.2s; height: 280px; justify-content: center; width: 100%; max-width: 500px; overflow: hidden; }
-.sing-card:hover { border-color: rgba(200,169,110,0.3); }
-.sing-card.revealed { border-color: var(--accent); cursor: default; }
-.sing-word { font-size: 36px; letter-spacing: 0.05em; color: var(--text); }
-.sing-hint { font-size: 9px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
-.sing-khmer { font-family: 'Noto Serif Khmer', serif; font-size: 64px; line-height: 1; color: var(--accent); display: none; }
-.sing-card.revealed .sing-khmer { display: block; }
-.sing-card.revealed .sing-hint { display: none; }
-.sing-variants { font-size: 11px; letter-spacing: 0.08em; color: var(--muted); display: none; }
-.sing-card.revealed .sing-variants { display: block; }
-.sing-copy-row { margin-top: 4px; }
-.sing-copy-btn { background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; }
-.sing-copy-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
-.sing-copy-btn.copied { color: var(--correct); border-color: var(--correct); }
-.sing-loading { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); text-align: center; padding: 20px; display: none; }
-.sing-loading.visible { display: block; }
-
-/* SINGDECIPHER */
-.sd-wrap { display: flex; flex-direction: column; gap: 12px; max-width: 600px; }
-.sd-label { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; }
-.sd-input { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 14px; color: var(--text); font-family: 'DM Mono', monospace; width: 100%; resize: none; outline: none; line-height: 1.6; transition: border-color 0.2s; }
-.sd-input:focus { border-color: rgba(200,169,110,0.4); }
-.sd-output-wrap { position: relative; }
-.sd-output { font-family: 'Noto Serif Khmer', serif; font-size: 24px; line-height: 1.8; color: var(--accent); background: var(--surface); border: 1px solid var(--accent); border-radius: 6px; padding: 14px 44px 14px 14px; min-height: 60px; display: none; }
-.sd-output.visible { display: block; }
-.sd-output .unmatched { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 14px; }
-.sd-copy-btn { position: absolute; top: 10px; right: 10px; background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; }
-.sd-copy-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
-.sd-copy-btn.copied { color: var(--correct); border-color: var(--correct); }
-.sd-stats { font-size: 10px; letter-spacing: 0.12em; color: var(--muted); }
-.sd-loading { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); display: none; }
-.sd-loading.visible { display: block; }
-
 /* MOBILE */
 @media (max-width: 700px) {
   .sidebar { display: none; }
@@ -557,17 +517,9 @@ body::before {
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           <span class="nav-label">Listen</span>
         </div>
-        <div class="nav-item" id="nav-sing" onclick="switchSection('sing', this)">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-          <span class="nav-label">Sing</span>
-        </div>
       </div>
       <div class="nav-section">
         <div class="nav-section-label">Tools</div>
-        <div class="nav-item" id="nav-singdecipher" onclick="switchSection('singdecipher', this)">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="M11 8v3l2 2"/><line x1="16.65" y1="16.65" x2="21" y2="21"/></svg>
-          <span class="nav-label">Decode</span>
-        </div>
         <div class="nav-item" id="nav-dictionary" onclick="switchSection('dictionary', this)">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           <span class="nav-label">Dictionary</span>
@@ -758,46 +710,6 @@ body::before {
       <div class="dict-loading" id="dict-loading">Loading dictionary…</div>
     </div>
 
-    <!-- SING -->
-    <div class="panel" id="panel-sing">
-      <div class="sing-wrap">
-        <div class="sing-filters">
-          <button class="sing-filter-btn active" onclick="setSingFilter('all', this)">All</button>
-          <button class="sing-filter-btn" onclick="setSingFilter('100', this)">Top 100</button>
-          <button class="sing-filter-btn" onclick="setSingFilter('500', this)">Top 500</button>
-        </div>
-        <div class="sing-card" id="sing-card" onclick="revealSing()">
-          <div class="sing-word" id="sing-word"></div>
-          <div class="sing-hint" id="sing-hint">tap to reveal</div>
-          <div class="sing-khmer" id="sing-khmer"></div>
-          <div class="sing-variants" id="sing-variants"></div>
-          <div class="sing-copy-row" id="sing-copy-row" style="display:none">
-            <button class="sing-copy-btn" onclick="copySingWord(event)">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            </button>
-          </div>
-        </div>
-        <div class="sing-loading" id="sing-loading">Loading…</div>
-        <button class="sing-next-btn" onclick="nextSingCard()">Next →</button>
-      </div>
-    </div>
-
-    <!-- SINGDECIPHER -->
-    <div class="panel" id="panel-singdecipher">
-      <div class="sd-wrap">
-        <div class="sd-label">Type sing khmer — words or full sentences</div>
-        <textarea class="sd-input" id="sd-input" placeholder="e.g. anak chong tov na" rows="3" oninput="onSdInput()"></textarea>
-        <div class="sd-output-wrap">
-          <div class="sd-output" id="sd-output"></div>
-          <button class="sd-copy-btn" id="sd-copy-btn" onclick="copySdOutput()" style="display:none">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          </button>
-        </div>
-        <div class="sd-stats" id="sd-stats"></div>
-        <div class="sd-loading" id="sd-loading">Loading sing data…</div>
-      </div>
-    </div>
-
   </main>
 
   <!-- BOTTOM NAV -->
@@ -813,14 +725,6 @@ body::before {
     <div class="bottom-nav-item" id="bnav-listen" onclick="switchSection('listen', this, true)">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
       <span class="bottom-nav-label">Listen</span>
-    </div>
-    <div class="bottom-nav-item" id="bnav-sing" onclick="switchSection('sing', this, true)">
-      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-      <span class="bottom-nav-label">Sing</span>
-    </div>
-    <div class="bottom-nav-item" id="bnav-singdecipher" onclick="switchSection('singdecipher', this, true)">
-      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><line x1="16.65" y1="16.65" x2="21" y2="21"/></svg>
-      <span class="bottom-nav-label">Decode</span>
     </div>
     <div class="bottom-nav-item" id="bnav-dictionary" onclick="switchSection('dictionary', this, true)">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
@@ -940,8 +844,6 @@ function switchSection(name, el, isMobile) {
 
   if (name === 'quiz') showLevelSelect();
   if (name === 'dictionary') initDictionary();
-  if (name === 'sing') initSing();
-  if (name === 'singdecipher') initSingDecipher();
   if (name === 'listen') {
     document.getElementById('listen-sub-phrases').style.display = 'block';
     document.getElementById('listen-sub-vocab').style.display = 'none';
@@ -1708,154 +1610,6 @@ function onDictSearch(val) {
   if (!val.trim()) { results.classList.remove('visible'); return; }
   showDictResults(val.trim(), dictData.filter(e => e.w.includes(val.trim())), true);
 }
-// ── SING DATA ──
-let singData = null, singInited = false;
-let singPool = [], singIndex = 0, singFilter = 'all';
-const COPY_SVG_SMALL = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-const CHECK_SVG_SMALL = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-
-async function initSing() {
-  if (singInited) { loadSingCard(); return; }
-  document.getElementById('sing-loading').classList.add('visible');
-  try {
-    const res = await fetch('sing.json');
-    singData = await res.json();
-    singInited = true;
-  } catch (e) {
-    document.getElementById('sing-loading').textContent = 'failed to load sing data';
-    return;
-  }
-  document.getElementById('sing-loading').classList.remove('visible');
-  buildSingPool();
-  loadSingCard();
-}
-
-function buildSingPool() {
-  if (!singData) return;
-  let pool = singData.filter(e => e.sing && e.sing.length > 0);
-  if (singFilter === '100') pool = pool.slice(0, 100);
-  else if (singFilter === '500') pool = pool.slice(0, 500);
-  // shuffle
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  singPool = pool;
-  singIndex = 0;
-}
-
-function setSingFilter(filter, btn) {
-  singFilter = filter;
-  document.querySelectorAll('.sing-filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  buildSingPool();
-  loadSingCard();
-}
-
-function loadSingCard() {
-  if (!singPool.length) return;
-  const entry = singPool[singIndex % singPool.length];
-  const card = document.getElementById('sing-card');
-  card.classList.remove('revealed');
-  document.getElementById('sing-word').textContent = entry.sing[0];
-  document.getElementById('sing-hint').style.display = '';
-  document.getElementById('sing-khmer').textContent = entry.km;
-  document.getElementById('sing-variants').textContent = entry.sing.join(' · ');
-  document.getElementById('sing-copy-row').style.display = 'none';
-  document.getElementById('sing-copy-row').querySelector('.sing-copy-btn').classList.remove('copied');
-  document.getElementById('sing-copy-row').querySelector('.sing-copy-btn').innerHTML = COPY_SVG_SMALL;
-  card.dataset.km = entry.km;
-}
-
-function revealSing() {
-  const card = document.getElementById('sing-card');
-  if (card.classList.contains('revealed')) return;
-  card.classList.add('revealed');
-  document.getElementById('sing-copy-row').style.display = 'flex';
-}
-
-function nextSingCard() {
-  singIndex++;
-  if (singIndex >= singPool.length) buildSingPool();
-  loadSingCard();
-}
-
-function copySingWord(e) {
-  e.stopPropagation();
-  const km = document.getElementById('sing-card').dataset.km;
-  const btn = document.querySelector('.sing-copy-btn');
-  navigator.clipboard.writeText(km).then(() => {
-    btn.classList.add('copied');
-    btn.innerHTML = CHECK_SVG_SMALL;
-    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = COPY_SVG_SMALL; }, 2000);
-  });
-}
-
-// ── SINGDECIPHER ──
-let sdInited = false, sdLookup = {};
-
-async function initSingDecipher() {
-  if (sdInited) return;
-  document.getElementById('sd-loading').classList.add('visible');
-  try {
-    if (!singData) {
-      const res = await fetch('sing.json');
-      singData = await res.json();
-    }
-    // build lookup: singvariant -> khmer
-    singData.forEach(e => {
-      e.sing.forEach(v => { sdLookup[v.toLowerCase()] = e.km; });
-    });
-    sdInited = true;
-  } catch (e) {
-    document.getElementById('sd-loading').textContent = 'failed to load sing data';
-    return;
-  }
-  document.getElementById('sd-loading').classList.remove('visible');
-}
-
-function onSdInput() {
-  if (!sdInited) return;
-  const val = document.getElementById('sd-input').value.trim();
-  const output = document.getElementById('sd-output');
-  const stats = document.getElementById('sd-stats');
-  const copyBtn = document.getElementById('sd-copy-btn');
-
-  if (!val) {
-    output.classList.remove('visible');
-    copyBtn.style.display = 'none';
-    stats.textContent = '';
-    return;
-  }
-
-  const words = val.split(/\s+/);
-  let matched = 0, unmatched = 0;
-  const parts = words.map(w => {
-    // strip punctuation for lookup but preserve it
-    const punct = w.match(/[^a-zA-Z0-9]*$/)?.[0] || '';
-    const clean = w.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const km = sdLookup[clean];
-    if (km) { matched++; return `<span>${km}</span>${punct ? `<span class="unmatched">${punct}</span>` : ''}`; }
-    unmatched++;
-    return `<span class="unmatched">${w}</span>`;
-  });
-
-  output.innerHTML = parts.join('');
-  output.classList.add('visible');
-  copyBtn.style.display = 'flex';
-  stats.textContent = `${matched} of ${words.length} words matched${unmatched > 0 ? ` · ${unmatched} unrecognized` : ''}`;
-}
-
-function copySdOutput() {
-  const text = document.getElementById('sd-output').innerText;
-  const btn = document.getElementById('sd-copy-btn');
-  navigator.clipboard.writeText(text).then(() => {
-    btn.classList.add('copied');
-    btn.innerHTML = CHECK_SVG_SMALL;
-    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = COPY_SVG_SMALL; }, 2000);
-  });
-}
-
 // ── PARTICLES ──
 (function() {
   const canvas = document.getElementById('particles');
