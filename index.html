@@ -1752,18 +1752,22 @@ function onDictSearch(val) {
 }
 // ── WRITE (shape-recall tracing) ──
 // Scoring compares two rasterised masks in a normalised square:
-//   precision = user ink landing on the target (target dilated by W_TOL) → penalises spill
-//   recall    = target covered by the user's ink, UNdilated              → penalises missing parts
+//   precision = user ink landing on the target (dilated by W_TOL_PX) → penalises spill
+//   recall    = target covered by the ink, widened to the glyph's own stroke thickness
 //   score     = min(precision, recall) — you must both stay on the letter AND cover it
-// min() rather than F1, and an undilated user mask for recall, because dilating the ink
-// let a scribble "cover" 84% of the glyph and score 0.9. Measured separation with these
-// values: good attempts 0.77–0.90, wrong character 0.40, scribble 0.31, blob 0.27.
+//
+// recall must widen the ink, because a pen tracing the CENTRELINE of a limb cannot paint a
+// limb thicker than itself: glyph strokes here are 15–29px against a 9px pen, so an ideal
+// centreline trace capped out at recall 0.30–0.58 and failed. The widening is derived from
+// each glyph's measured thickness rather than a fixed fudge, and precision still uses the
+// UNdilated ink so spill is punished. Discrimination between similar letters is the
+// competitive gate's job (see wScore), which is why the absolute bar can be forgiving.
 // Tuning knobs:
 const W_RES        = 256;   // mask resolution (px, square)
 const W_INK        = 0.045; // on-screen pen width, fraction of the drawing box
 const W_INK_CANON  = 9;     // pen width inside the canonical frame (px)
-const W_TOL        = 0.015; // target dilation tolerance, fraction of W_RES
-const W_PASS       = 0.55;  // absolute score needed
+const W_TOL_PX     = 8;     // precision tolerance: how far outside the glyph ink may stray
+const W_PASS       = 0.58;  // absolute score needed
 const W_MARGIN     = 0.04;  // how far below the best-matching rival letter is still allowed
 const W_MIN_EXTENT = 0.18;  // reject drawings smaller than this fraction of the box
 const W_GLYPH_PX   = 190;   // font size used to rasterise the target into W_RES
@@ -2085,10 +2089,29 @@ function wGlyphMask(char) {
   c.drawImage(wTmpCanvas, raw.box.x, raw.box.y, raw.box.w, raw.box.h,
               W_BOX.x + (W_BOX.w - dw) / 2, W_BOX.y + (W_BOX.h - dh) / 2, dw, dh);
   const mask = wExtract(c);
-  const dilated = wDilate(mask, Math.round(W_TOL * W_RES));
-  const entry = { mask, dilated };
+  const dilated = wDilate(mask, W_TOL_PX);
+  // How far the ink must be widened for the recall term to be fair: enough to fill a limb
+  // of this glyph's thickness when drawn down its centre.
+  const thick = wThickness(mask);
+  const recallRadius = Math.max(0, Math.round((thick - W_INK_CANON) / 2));
+  const entry = { mask, dilated, thick, recallRadius };
   wGlyphCache.set(char, entry);
   return entry;
+}
+
+// Mean stroke thickness. For a ribbon of width w and length L, area = wL and perimeter ≈ 2L,
+// so 2*area/perimeter ≈ w — cheap and stable enough for glyph limbs.
+function wThickness(mask) {
+  let perimeter = 0;
+  for (let y = 0; y < W_RES; y++) {
+    for (let x = 0; x < W_RES; x++) {
+      const i = y * W_RES + x;
+      if (!mask.data[i]) continue;
+      if (x === 0 || x === W_RES - 1 || y === 0 || y === W_RES - 1 ||
+          !mask.data[i - 1] || !mask.data[i + 1] || !mask.data[i - W_RES] || !mask.data[i + W_RES]) perimeter++;
+    }
+  }
+  return 2 * mask.count / Math.max(perimeter, 1);
 }
 
 // the user's strokes, uniform-fit into the same canonical box
@@ -2135,14 +2158,17 @@ function wStrokeBox() {
   return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
-function wCompare(userMask, entry) {
-  if (!entry || !userMask || !userMask.count || !entry.mask.count) return null;
+// `ink` is the raw mask (precision), `inkWidened` the same ink dilated to this glyph's
+// stroke thickness (recall). Passing both in lets callers reuse one widened mask across
+// every candidate that needs the same radius.
+function wCompare(ink, inkWidened, entry) {
+  if (!entry || !ink || !ink.count || !entry.mask.count) return null;
   let onTarget = 0, covered = 0;
   for (let i = 0; i < W_RES * W_RES; i++) {
-    if (userMask.data[i] && entry.dilated.data[i]) onTarget++;
-    if (entry.mask.data[i] && userMask.data[i]) covered++;
+    if (ink.data[i] && entry.dilated.data[i]) onTarget++;
+    if (entry.mask.data[i] && inkWidened.data[i]) covered++;
   }
-  const precision = onTarget / userMask.count;
+  const precision = onTarget / ink.count;
   const recall = covered / entry.mask.count;
   return { precision, recall, score: Math.min(precision, recall) };
 }
@@ -2150,14 +2176,26 @@ function wCompare(userMask, entry) {
 // score the drawing against `char`, and against every other consonant so we can tell
 // "you drew a letter, but not this one" apart from "you drew nothing like a letter"
 function wScore(char) {
-  const um = wUserMask();
-  if (!um || !um.count) return null;
-  const self = wCompare(um, wGlyphMask(char));
+  const ink = wUserMask();
+  if (!ink || !ink.count) return null;
+
+  // radii repeat across glyphs, so dilate once per distinct radius rather than 33 times
+  const widened = new Map();
+  const widen = r => {
+    if (!widened.has(r)) widened.set(r, r > 0 ? wDilate(ink, r) : ink);
+    return widened.get(r);
+  };
+  const against = ch => {
+    const entry = wGlyphMask(ch);
+    return entry ? wCompare(ink, widen(entry.recallRadius), entry) : null;
+  };
+
+  const self = against(char);
   if (!self) return null;
   let best = null;
   for (const c of consonants) {
     if (c.khmer === char) continue;
-    const r = wCompare(um, wGlyphMask(c.khmer));
+    const r = against(c.khmer);
     if (r && (!best || r.score > best.score)) best = { khmer: c.khmer, score: r.score };
   }
   return { precision: self.precision, recall: self.recall, score: self.score, rival: best };
