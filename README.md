@@ -1,1 +1,1 @@
-# khmer-alphabet
+# learn-khmer
