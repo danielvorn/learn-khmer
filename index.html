@@ -22,6 +22,8 @@
   --wrong-dim: rgba(158,90,90,0.15);
   --sidebar-w: 180px;
   --bottom-h: 60px;
+  --grid-faint: rgba(232,224,208,0.06);
+  --grid-strong: rgba(200,169,110,0.18);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -459,6 +461,20 @@ body::before {
 }
 .write-canvas-wrap.pass { border-color: var(--correct); }
 .write-canvas-wrap.fail { border-color: var(--wrong); }
+/* Optional proportion guide: quarter grid plus a stronger centre cross. Drawn as wrapper
+   background layers, so it sits below the ghost and the ink canvas and can never end up in
+   the offscreen masks the scorer reads. */
+.write-canvas-wrap.grid {
+  background-image:
+    linear-gradient(to right, transparent calc(50% - 0.5px), var(--grid-strong) calc(50% - 0.5px),
+                    var(--grid-strong) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(50% - 0.5px), var(--grid-strong) calc(50% - 0.5px),
+                    var(--grid-strong) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+    linear-gradient(to right, var(--grid-faint) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-faint) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 25% 25%, 25% 25%;
+  background-repeat: no-repeat, no-repeat, repeat, repeat;
+}
 .write-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
 .write-ghost {
   position: absolute; inset: 0; z-index: 1;
@@ -478,6 +494,7 @@ body::before {
   padding: 7px 14px; cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 .write-tool-btn:hover { color: var(--text); border-color: var(--muted); }
+.write-tool-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
 .write-check-btn {
   background: none; border: 1px solid var(--accent); color: var(--accent);
   font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
@@ -751,6 +768,7 @@ body::before {
           <button class="write-tool-btn" onclick="writeUndo()">Undo</button>
           <button class="write-tool-btn" onclick="writeClear()">Clear</button>
           <button class="write-tool-btn" id="w-peek-btn" onclick="writePeek()">Peek</button>
+          <button class="write-tool-btn" id="w-grid-btn" onclick="writeToggleGrid()">Grid</button>
           <button class="write-check-btn" id="w-check-btn" onclick="writeCheck()">Check</button>
         </div>
         <button class="next-btn" id="w-next-btn" onclick="writeNext()">Next →</button>
@@ -1779,6 +1797,8 @@ let wTimerInterval = null, wStartTime = 0;
 let wCanvas = null, wCtx = null, wDpr = 1;
 let wFontReady = false;
 let wPeekTimer = null, wGhostGen = 0;
+// remembered between sessions — re-enabling a drawing guide every visit is a nuisance
+let wGridOn = (() => { try { return localStorage.getItem('lk-write-grid') === '1'; } catch (e) { return false; } })();
 const wMaskCanvas = document.createElement('canvas');
 const wUserCanvas = document.createElement('canvas');
 const wAudioEl = new Audio();
@@ -1820,6 +1840,7 @@ function startWrite(level) {
   document.getElementById('write-results').classList.remove('show');
   document.getElementById('write-active').style.display = 'flex';
   wSetupCanvas();
+  wApplyGrid();
   wStartTimer();
   wLoad();
 }
@@ -1834,6 +1855,7 @@ function writeRetryWrong() {
   document.getElementById('write-results').classList.remove('show');
   document.getElementById('write-active').style.display = 'flex';
   wSetupCanvas();
+  wApplyGrid();
   wStartTimer();
   wLoad();
 }
@@ -1937,6 +1959,19 @@ function writePeek() {
   wPeekTimer = setTimeout(() => {
     if (!wAnswered && wLevel !== 1) ghost.classList.remove('visible');
   }, 1100);
+}
+
+function writeToggleGrid() {
+  wGridOn = !wGridOn;
+  try { localStorage.setItem('lk-write-grid', wGridOn ? '1' : '0'); } catch (e) {}
+  wApplyGrid();
+}
+
+function wApplyGrid() {
+  const wrap = document.querySelector('.write-canvas-wrap');
+  if (wrap) wrap.classList.toggle('grid', wGridOn);
+  const btn = document.getElementById('w-grid-btn');
+  if (btn) btn.classList.toggle('active', wGridOn);
 }
 
 function wUpdateCheckState() {
