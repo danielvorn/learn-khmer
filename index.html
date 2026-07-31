@@ -482,14 +482,12 @@ body::before {
 
 /* The surface/border live on the WRAPPER, not the canvas. An opaque canvas painted after
    the ghost in DOM order hid the outline completely, so the outline looked dead. */
+/* Proportion guide (quarter grid + a stronger centre cross) is permanent, drawn as
+   wrapper background layers so it stays below the ghost and the ink. */
 .write-canvas-wrap {
   position: relative; width: 100%; max-width: min(340px, 40vh); aspect-ratio: 1;
   background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
   overflow: hidden;
-}
-/* Optional proportion guide: quarter grid plus a stronger centre cross, as wrapper
-   background layers so it stays below the ghost and the ink. */
-.write-canvas-wrap.grid {
   background-image:
     linear-gradient(to right, transparent calc(50% - 0.5px), var(--grid-strong) calc(50% - 0.5px),
                     var(--grid-strong) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
@@ -514,6 +512,9 @@ body::before {
   position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%;
   background: transparent; touch-action: none; cursor: crosshair;
 }
+/* Reveal is for comparing the real letter, not your attempt, so the ink hides while it's
+   on — otherwise it just sits drawn over the top of what you're trying to compare against. */
+.write-canvas-wrap.revealing .write-canvas { opacity: 0; pointer-events: none; }
 .write-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
 .write-tool-btn {
   background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--muted);
@@ -763,7 +764,6 @@ body.is-offline .offline-note { display: block; }
           <button class="write-tool-btn" onclick="writeUndo()">Undo</button>
           <button class="write-tool-btn" onclick="writeClear()">Clear</button>
           <button class="write-tool-btn" id="w-outline-btn" onclick="writeToggleOutline()">Outline</button>
-          <button class="write-tool-btn" id="w-grid-btn" onclick="writeToggleGrid()">Grid</button>
           <button class="write-tool-btn" id="w-reveal-btn" onclick="writeToggleReveal()">Reveal</button>
         </div>
 
@@ -1778,7 +1778,6 @@ wAudioEl.preload = 'auto';
 // remembered between visits — re-enabling drawing aids every session is a nuisance
 const wPref = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v === '1'; } catch (e) { return d; } };
 const wSavePref = (k, v) => { try { localStorage.setItem(k, v ? '1' : '0'); } catch (e) {} };
-let wGridOn = wPref('lk-write-grid', false);
 let wOutlineOn = wPref('lk-write-outline', true);
 
 function initWrite() {
@@ -1883,12 +1882,6 @@ function writeUndo() {
   wRedraw();
 }
 
-function writeToggleGrid() {
-  wGridOn = !wGridOn;
-  wSavePref('lk-write-grid', wGridOn);
-  wApplyToggles();
-}
-
 function writeToggleOutline() {
   wOutlineOn = !wOutlineOn;
   wSavePref('lk-write-outline', wOutlineOn);
@@ -1904,14 +1897,13 @@ function writeToggleReveal() {
 
 function wApplyToggles() {
   const wrap = document.querySelector('.write-canvas-wrap');
-  if (wrap) wrap.classList.toggle('grid', wGridOn);
+  if (wrap) wrap.classList.toggle('revealing', wRevealOn);
   const ghost = document.getElementById('w-ghost');
   if (ghost) {
     ghost.classList.toggle('reveal', wRevealOn);
     ghost.classList.toggle('visible', wOutlineOn && !wRevealOn);
   }
   const set = (id, on) => { const b = document.getElementById(id); if (b) b.classList.toggle('active', on); };
-  set('w-grid-btn', wGridOn);
   set('w-outline-btn', wOutlineOn);
   set('w-reveal-btn', wRevealOn);
 }
