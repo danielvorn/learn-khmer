@@ -548,7 +548,12 @@ body.is-offline .offline-note { display: block; }
 
   .main {
     margin-left: 0;
-    padding: 24px 16px calc(var(--bottom-h) + 24px);
+    /* viewport-fit=cover + a translucent iOS status bar (needed so the app doesn't show a
+       plain white bar above it in standalone mode) means content draws full-screen under
+       the status bar/notch unless it pads itself back out — Safari normally reserves this
+       space itself, which is why the site looked fine but the installed app did not. */
+    padding: calc(24px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+             calc(var(--bottom-h) + 24px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
     max-width: 100%;
   }
 
@@ -556,7 +561,8 @@ body.is-offline .offline-note { display: block; }
     display: flex;
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    height: var(--bottom-h);
+    height: calc(var(--bottom-h) + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
     background: #0a0a0a;
     border-top: 1px solid var(--border);
     z-index: 10;
