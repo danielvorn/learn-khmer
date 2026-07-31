@@ -475,10 +475,7 @@ body::before {
 
 /* WRITE — a practice pad, not a quiz: no scoring, free navigation */
 .write-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.write-prompt { display: flex; align-items: center; justify-content: center; gap: 16px; }
-.write-prompt-text { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
-.write-roman { font-size: 26px; letter-spacing: 0.12em; color: var(--text); line-height: 1; }
-.write-sublabel { font-size: 9px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
+.write-prompt { display: flex; align-items: center; justify-content: center; }
 /* smaller, inline play button here — the quiz keeps the full-size one */
 #panel-write .play-btn { width: 46px; height: 46px; flex: none; }
 #panel-write .play-icon { font-size: 15px; }
@@ -755,10 +752,6 @@ body.is-offline .offline-note { display: block; }
             <span class="play-icon">&#9654;</span>
             <span class="play-wave"><span></span><span></span><span></span><span></span><span></span></span>
           </button>
-          <div class="write-prompt-text">
-            <div class="write-roman" id="w-roman">ka</div>
-            <div class="write-sublabel">practise writing</div>
-          </div>
         </div>
 
         <div class="write-canvas-wrap">
@@ -1930,7 +1923,6 @@ function wLoad() {
   const num = String(q.index + 1).padStart(2, '0');
   const ghost = document.getElementById('w-ghost');
 
-  document.getElementById('w-roman').textContent = q.roman;
   document.getElementById('w-count').textContent = `${wCurrent + 1} / ${wQueue.length}`;
   ghost.textContent = q.khmer;
   ghost.style.fontSize = Math.round(document.querySelector('.write-canvas-wrap').clientWidth * 0.62) + 'px';
@@ -1941,6 +1933,9 @@ function wLoad() {
 
   const file = `audio/consonants/c-${num}.mp3`;
   document.getElementById('w-play-btn').onclick = () => wPlay(file);
+  // wLoad only ever runs inside a click handler (nav in, Next, Prev), so this stays
+  // within the user-gesture window autoplay policies require.
+  wPlay(file);
 }
 
 function writeNext() {
