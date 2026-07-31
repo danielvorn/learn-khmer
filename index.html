@@ -37,24 +37,103 @@
                  U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
                  U+2212, U+2215, U+FEFF, U+FFFD;
 }
+/* Theme: dark is the default (no attribute needed), matching how this app always looked.
+   Every color that needs to invert between themes is a variable — nothing below this block
+   should be a literal hex/rgb color. Where a value takes an alpha (hovers, dim fills, the
+   grid guide), it is built from an "-rgb" triplet variable via rgba(var(--x-rgb), a) rather
+   than its own literal, so it re-tints automatically when the base color changes per theme —
+   only the base tokens need overriding in the light block below. */
 :root {
   --bg: #0e0e0e;
   --surface: #181818;
+  --surface-2: #0a0a0a;      /* sidebar / bottom-nav strip: deeper than --surface */
+  --hover: #1e1e1e;          /* hover fill for cards, tabs, nav items */
   --border: #2a2a2a;
   --accent: #c8a96e;
-  --accent-dim: rgba(200,169,110,0.12);
+  --accent-rgb: 200,169,110;
+  --accent-dim: rgba(var(--accent-rgb),0.12);
   --text: #e8e0d0;
+  --text-rgb: 232,224,208;
   --muted: #666;
+  --faint: #333;             /* de-emphasised labels: section headers, index numbers */
+  --dim-icon: #3a3a3a;       /* unselected nav icon/label */
+  --icon-hover: #555;
   --series1: #6a9fd8;
+  --series1-rgb: 106,159,216;
   --series2: #d87a6a;
+  --series2-rgb: 216,122,106;
+  --digraph-rgb: 160,140,200;
+  --independent-rgb: 110,180,160;
   --correct: #5a9e6f;
-  --correct-dim: rgba(90,158,111,0.15);
+  --correct-rgb: 90,158,111;
+  --correct-dim: rgba(var(--correct-rgb),0.15);
   --wrong: #9e5a5a;
-  --wrong-dim: rgba(158,90,90,0.15);
+  --wrong-rgb: 158,90,90;
+  --wrong-dim: rgba(var(--wrong-rgb),0.15);
+  --deep: #111;              /* inset panels, e.g. the mobile learn sub-toggle */
   --sidebar-w: 180px;
   --bottom-h: 60px;
-  --grid-faint: rgba(232,224,208,0.06);
-  --grid-strong: rgba(200,169,110,0.18);
+  --grid-faint: rgba(var(--text-rgb),0.06);
+  --grid-strong: rgba(var(--accent-rgb),0.18);
+}
+
+/* Explicit light choice always wins (data-theme is set by the toggle in JS). Absent an
+   explicit choice, light applies only when the OS prefers it — hence the same values
+   appear in both blocks below; CSS variables have no mixin to share them without a
+   preprocessor, so this is duplicated rather than left inconsistent. */
+:root[data-theme="light"] {
+  --bg: #f7f3ea;
+  --surface: #fdfbf5;
+  --surface-2: #efe7d4;
+  --hover: #efe4cd;
+  --border: #ddd4bf;
+  --accent: #a17324;
+  --accent-rgb: 161,115,36;
+  --text: #2b2620;
+  --text-rgb: 43,38,32;
+  --muted: #8a8272;
+  --faint: #b3a78c;
+  --dim-icon: #c2b9a0;
+  --icon-hover: #9c8f74;
+  --series1: #2f5f96;
+  --series1-rgb: 47,95,150;
+  --series2: #a44d38;
+  --series2-rgb: 164,77,56;
+  --digraph-rgb: 122,96,168;
+  --independent-rgb: 58,128,108;
+  --correct: #2f6f45;
+  --correct-rgb: 47,111,69;
+  --wrong: #953636;
+  --wrong-rgb: 149,54,54;
+  --deep: #efe7d4;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f7f3ea;
+    --surface: #fdfbf5;
+    --surface-2: #efe7d4;
+    --hover: #efe4cd;
+    --border: #ddd4bf;
+    --accent: #a17324;
+    --accent-rgb: 161,115,36;
+    --text: #2b2620;
+    --text-rgb: 43,38,32;
+    --muted: #8a8272;
+    --faint: #b3a78c;
+    --dim-icon: #c2b9a0;
+    --icon-hover: #9c8f74;
+    --series1: #2f5f96;
+    --series1-rgb: 47,95,150;
+    --series2: #a44d38;
+    --series2-rgb: 164,77,56;
+    --digraph-rgb: 122,96,168;
+    --independent-rgb: 58,128,108;
+    --correct: #2f6f45;
+    --correct-rgb: 47,111,69;
+    --wrong: #953636;
+    --wrong-rgb: 149,54,54;
+    --deep: #efe7d4;
+  }
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -82,7 +161,7 @@ body::before {
 .sidebar {
   width: var(--sidebar-w);
   min-height: 100vh;
-  background: #0a0a0a;
+  background: var(--surface-2);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -120,7 +199,7 @@ body::before {
 .nav-section-label {
   font-size: 8px;
   letter-spacing: 0.25em;
-  color: #333;
+  color: var(--faint);
   text-transform: uppercase;
   padding: 0 20px;
   margin-bottom: 4px;
@@ -138,8 +217,8 @@ body::before {
   user-select: none;
 }
 
-.nav-item:hover { background: #141414; }
-.nav-item.active { background: rgba(200,169,110,0.08); }
+.nav-item:hover { background: var(--hover); }
+.nav-item.active { background: rgba(var(--accent-rgb),0.08); }
 .nav-item.active::before {
   content: '';
   position: absolute;
@@ -149,20 +228,20 @@ body::before {
   border-radius: 0 2px 2px 0;
 }
 
-.nav-icon { width: 15px; height: 15px; flex-shrink: 0; color: #3a3a3a; transition: color 0.15s; }
+.nav-icon { width: 15px; height: 15px; flex-shrink: 0; color: var(--dim-icon); transition: color 0.15s; }
 .nav-item.active .nav-icon { color: var(--accent); }
-.nav-item:hover .nav-icon { color: #555; }
-.nav-label { font-size: 11px; letter-spacing: 0.1em; color: #3a3a3a; transition: color 0.15s; }
+.nav-item:hover .nav-icon { color: var(--icon-hover); }
+.nav-label { font-size: 11px; letter-spacing: 0.1em; color: var(--dim-icon); transition: color 0.15s; }
 .nav-item.active .nav-label { color: var(--accent); }
 .nav-item:hover .nav-label { color: var(--muted); }
 
 .learn-subtoggle {
   display: none;
   margin: 6px 12px 12px;
-  background: #111;
+  background: var(--deep);
   border-radius: 4px;
   overflow: hidden;
-  border: 1px solid #1e1e1e;
+  border: 1px solid var(--hover);
 }
 
 .learn-sub-btn {
@@ -172,7 +251,7 @@ body::before {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   text-align: center;
-  color: #333;
+  color: var(--faint);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   font-family: 'DM Mono', monospace;
@@ -180,7 +259,7 @@ body::before {
   background: none;
 }
 
-.learn-sub-btn.active { background: rgba(200,169,110,0.12); color: var(--accent); }
+.learn-sub-btn.active { background: rgba(var(--accent-rgb),0.12); color: var(--accent); }
 
 .learn-tabs { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 24px; }
 
@@ -204,7 +283,7 @@ body::before {
 .series-legend { display: flex; align-items: center; gap: 20px; font-size: 10px; letter-spacing: 0.15em; }
 .series-legend .s1 { color: var(--series1); }
 .series-legend .s2 { color: var(--series2); }
-.legend-divider { color: #333; user-select: none; }
+.legend-divider { color: var(--faint); user-select: none; }
 .legend-toggle {
   cursor: pointer; color: var(--muted); letter-spacing: 0.15em;
   text-decoration: line-through; text-decoration-color: transparent;
@@ -234,7 +313,7 @@ body::before {
   animation: fadeUp 0.4s ease both;
 }
 
-.card:hover { border-color: rgba(200,169,110,0.4); background: #1e1e1e; }
+.card:hover { border-color: rgba(var(--accent-rgb),0.4); background: var(--hover); }
 .card:active { transform: scale(0.97); }
 .card.playing { border-color: var(--accent); background: var(--accent-dim); }
 .card[data-series="1"] .khmer { color: var(--series1); }
@@ -243,7 +322,7 @@ body::before {
 
 .ripple-el {
   position: absolute; border-radius: 50%;
-  background: rgba(200,169,110,0.3);
+  background: rgba(var(--accent-rgb),0.3);
   transform: scale(0);
   animation: ripple 0.5s ease-out forwards;
   pointer-events: none;
@@ -251,7 +330,7 @@ body::before {
 @keyframes ripple { to { transform: scale(4); opacity: 0; } }
 
 .khmer { font-family: 'Noto Serif Khmer', serif; font-size: 52px; line-height: 1; color: var(--text); transition: color 0.2s; }
-.index { position: absolute; top: 6px; right: 8px; font-size: 8px; color: #333; }
+.index { position: absolute; top: 6px; right: 8px; font-size: 8px; color: var(--faint); }
 
 .wave { display: flex; align-items: center; gap: 2px; height: 14px; opacity: 0; transition: opacity 0.2s; }
 .card.playing .wave { opacity: 1; }
@@ -277,7 +356,7 @@ body::before {
   padding: 24px 16px; cursor: pointer; display: flex; flex-direction: column;
   align-items: center; gap: 8px; transition: border-color 0.2s, background 0.2s;
 }
-.level-card:hover { border-color: rgba(200,169,110,0.4); background: #1e1e1e; }
+.level-card:hover { border-color: rgba(var(--accent-rgb),0.4); background: var(--hover); }
 .level-card:active { transform: scale(0.98); }
 .level-name { font-size: 13px; letter-spacing: 0.1em; color: var(--text); }
 .level-detail { font-size: 10px; letter-spacing: 0.15em; color: var(--muted); }
@@ -305,7 +384,7 @@ body::before {
   display: flex; align-items: center; justify-content: center;
   transition: background 0.2s, transform 0.15s;
 }
-.play-btn:hover { background: rgba(200,169,110,0.2); }
+.play-btn:hover { background: rgba(var(--accent-rgb),0.2); }
 .play-btn:active { transform: scale(0.95); }
 .play-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 .play-btn.pulse { animation: btnpulse 0.5s ease; }
@@ -338,7 +417,7 @@ body::before {
   padding: 12px 8px; cursor: pointer; display: flex; flex-direction: column;
   align-items: center; gap: 4px; transition: border-color 0.15s, background 0.15s, transform 0.1s; user-select: none;
 }
-.opt-btn:hover:not(:disabled) { border-color: rgba(200,169,110,0.4); background: #1e1e1e; }
+.opt-btn:hover:not(:disabled) { border-color: rgba(var(--accent-rgb),0.4); background: var(--hover); }
 .opt-btn:active:not(:disabled) { transform: scale(0.97); }
 .opt-btn:disabled { cursor: default; }
 .opt-btn.correct { border-color: var(--correct); background: var(--correct-dim); color: var(--correct); }
@@ -375,7 +454,7 @@ body::before {
 .listen-tab { flex: 1; background: none; border: none; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; padding: 10px 0; cursor: pointer; transition: color 0.2s, background 0.2s; }
 .listen-tab:first-child { border-right: 1px solid var(--border); }
 .listen-tab.active { color: var(--accent); background: var(--accent-dim); }
-.listen-tab:hover:not(.active) { color: var(--text); background: #1a1a1a; }
+.listen-tab:hover:not(.active) { color: var(--text); background: var(--hover); }
 .listen-top-bar { height: 2px; width: 0%; background: var(--accent); border-radius: 0 2px 2px 0; margin-bottom: 28px; }
 .listen-top-bar.loading { animation: topbar 1.4s ease-in-out infinite; }
 @keyframes topbar { 0% { width:0%; margin-left:0%; } 50% { width:70%; margin-left:15%; } 100% { width:0%; margin-left:100%; } }
@@ -428,7 +507,7 @@ body::before {
 .dict-section-label { font-size: 10px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
 .dict-consonant-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px; }
 .dict-con-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; user-select: none; }
-.dict-con-card:hover { border-color: rgba(200,169,110,0.4); background: #1e1e1e; }
+.dict-con-card:hover { border-color: rgba(var(--accent-rgb),0.4); background: var(--hover); }
 .dict-con-card.active { border-color: var(--accent); background: var(--accent-dim); }
 .dict-con-card .khmer { font-size: 28px; transition: color 0.15s; }
 .dict-con-card[data-series="1"] .khmer { color: var(--series1); }
@@ -460,18 +539,18 @@ body::before {
 .vowel-btns { display: flex; gap: 6px; width: 100%; }
 .vowel-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 7px 4px; border-radius: 5px; border: 1px solid var(--border); background: none; cursor: pointer; transition: background 0.15s, border-color 0.15s, transform 0.1s; font-family: 'DM Mono', monospace; user-select: none; }
 .vowel-btn:active { transform: scale(0.96); }
-.vowel-btn.s1 { border-color: rgba(106,159,216,0.4); }
-.vowel-btn.s1:hover, .vowel-btn.s1.playing { background: rgba(106,159,216,0.1); border-color: var(--series1); }
-.vowel-btn.s2 { border-color: rgba(216,122,106,0.4); }
-.vowel-btn.s2:hover, .vowel-btn.s2.playing { background: rgba(216,122,106,0.1); border-color: var(--series2); }
+.vowel-btn.s1 { border-color: rgba(var(--series1-rgb),0.4); }
+.vowel-btn.s1:hover, .vowel-btn.s1.playing { background: rgba(var(--series1-rgb),0.1); border-color: var(--series1); }
+.vowel-btn.s2 { border-color: rgba(var(--series2-rgb),0.4); }
+.vowel-btn.s2:hover, .vowel-btn.s2.playing { background: rgba(var(--series2-rgb),0.1); border-color: var(--series2); }
 .vowel-btn-label { font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; }
 .vowel-btn.s1 .vowel-btn-label { color: var(--series1); }
 .vowel-btn.s2 .vowel-btn-label { color: var(--series2); }
 .vowel-btn-word { font-family: 'Noto Serif Khmer', serif; font-size: 15px; color: var(--text); line-height: 1; }
 .vowel-btn-play { font-size: 10px; color: var(--muted); }
 .vowel-btn.playing .vowel-btn-play { color: var(--text); }
-.card.digraph { border-color: rgba(160,140,200,0.4); }
-.card.independent { border-color: rgba(110,180,160,0.4); }
+.card.digraph { border-color: rgba(var(--digraph-rgb),0.4); }
+.card.independent { border-color: rgba(var(--independent-rgb),0.4); }
 
 /* WRITE — a practice pad, not a quiz: no scoring, free navigation */
 .write-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
@@ -540,6 +619,26 @@ body::before {
 }
 body.is-offline .offline-note { display: block; }
 
+/* THEME TOGGLE — fixed to the viewport, above both navs (z-index 10) and the particle
+   canvas (z-index 0), so it stays reachable and visible from every panel. */
+.theme-toggle {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top));
+  right: calc(12px + env(safe-area-inset-right));
+  z-index: 50;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); background: var(--hover); }
+.theme-icon { width: 17px; height: 17px; }
+.theme-icon-moon { display: none; }
+/* icon shown is the destination, not the current state — a sun while dark means "tap for
+   light day", a moon while light means "tap for dark night" */
+.theme-toggle.is-light .theme-icon-sun { display: none; }
+.theme-toggle.is-light .theme-icon-moon { display: block; }
+
 /* MOBILE */
 @media (max-width: 700px) {
   .sidebar { display: none; }
@@ -561,7 +660,7 @@ body.is-offline .offline-note { display: block; }
     bottom: 0; left: 0; right: 0;
     height: calc(var(--bottom-h) + env(safe-area-inset-bottom));
     padding-bottom: env(safe-area-inset-bottom);
-    background: #0a0a0a;
+    background: var(--surface-2);
     border-top: 1px solid var(--border);
     z-index: 10;
     justify-content: space-around;
@@ -569,9 +668,9 @@ body.is-offline .offline-note { display: block; }
   }
 
   .bottom-nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; flex: 1; padding: 8px 0; -webkit-tap-highlight-color: transparent; user-select: none; }
-  .bottom-nav-icon { width: 20px; height: 20px; color: #3a3a3a; transition: color 0.15s; }
+  .bottom-nav-icon { width: 20px; height: 20px; color: var(--dim-icon); transition: color 0.15s; }
   .bottom-nav-item.active .bottom-nav-icon { color: var(--accent); }
-  .bottom-nav-label { font-size: 8px; letter-spacing: 0.06em; color: #3a3a3a; transition: color 0.15s; text-transform: uppercase; }
+  .bottom-nav-label { font-size: 8px; letter-spacing: 0.06em; color: var(--dim-icon); transition: color 0.15s; text-transform: uppercase; }
   .bottom-nav-item.active .bottom-nav-label { color: var(--accent); }
 
   .mobile-learn-toggle { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 5px; overflow: hidden; margin-bottom: 16px; }
@@ -597,6 +696,13 @@ body.is-offline .offline-note { display: block; }
 </head>
 <body>
 <canvas id="particles" style="position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.35;"></canvas>
+<!-- Fixed to the viewport rather than living in the sidebar or bottom nav: it's a display
+     preference, not a navigation destination, and the two navs are different surfaces
+     (desktop sidebar vs. mobile bottom bar) — one corner button covers both. -->
+<button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Switch between light and dark theme">
+  <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2 12h2.5M19.5 12H22M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>
+  <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></svg>
+</button>
 <div class="app">
 
   <!-- SIDEBAR -->
@@ -880,6 +986,67 @@ body.is-offline .offline-note { display: block; }
 
 </div>
 <script>
+// ── THEME ──
+// Dark is the CSS default (no attribute needed); this only ever adds/removes
+// data-theme="light"/"dark" on <html> to override it. Explicit choices persist; absent one,
+// the CSS `@media (prefers-color-scheme: light)` block (see :root rules) follows the OS.
+const THEME_KEY = 'lk-theme';
+
+function cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+function getStoredTheme() {
+  try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; }
+}
+function setStoredTheme(v) {
+  try { localStorage.setItem(THEME_KEY, v); } catch (e) {}
+}
+
+function currentTheme() {
+  const explicit = document.documentElement.getAttribute('data-theme');
+  if (explicit) return explicit;
+  return matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
+function toggleTheme() {
+  setStoredTheme(currentTheme() === 'light' ? 'dark' : 'light');
+  applyTheme();
+}
+
+// Re-reads the resolved theme and pushes it everywhere something isn't plain CSS: the
+// <meta name="theme-color"> (OS chrome tint), the toggle's own icon, and the two canvases
+// (Write's ink, the background particles) that draw literal colors instead of inheriting one.
+function applyTheme() {
+  const stored = getStoredTheme();
+  if (stored === 'light' || stored === 'dark') document.documentElement.setAttribute('data-theme', stored);
+  else document.documentElement.removeAttribute('data-theme');
+
+  const theme = currentTheme();
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = cssVar('--bg', theme === 'light' ? '#f7f3ea' : '#0e0e0e');
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.classList.toggle('is-light', theme === 'light');
+
+  if (typeof wRedraw === 'function') wRedraw();          // Write ink recolors to --text
+  if (typeof window.wSetParticleRGB === 'function') {     // particles retint to --accent-rgb
+    window.wSetParticleRGB(cssVar('--accent-rgb', '200,169,110'));
+  }
+}
+
+// Only react to the OS flipping if the user never made an explicit choice — an explicit
+// choice must stick regardless of what the system does afterward.
+matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+  if (!getStoredTheme()) applyTheme();
+});
+// The initial call is deferred to the end of the script (see the closing THEME INIT
+// section below), not run here: applyTheme() can call wRedraw(), and wRedraw() reads
+// wCtx — a `let` declared later, in the WRITE section. A `let`/`const` binding stays in
+// its temporal dead zone until the line declaring it actually executes, so calling into
+// it this early throws "Cannot access 'wCtx' before initialization" and silently aborts
+// the entire script, which took every card grid on the page down with it.
+
 // ── DATA ──
 const consonants = [
   { khmer: 'ក', roman: 'ka',   series: 1, sub: '្ក' },
@@ -1850,8 +2017,11 @@ function wRedraw() {
   if (!w || !h) return;
   wCtx.setTransform(wDpr, 0, 0, wDpr, 0, 0);
   wCtx.clearRect(0, 0, w, h);
-  wCtx.strokeStyle = '#e8e0d0';
-  wCtx.fillStyle = '#e8e0d0';
+  // ink tracks --text so it stays legible if the theme flips mid-session — a canvas isn't
+  // CSS, so this has to be re-read rather than inherited
+  const inkColor = cssVar('--text', '#e8e0d0');
+  wCtx.strokeStyle = inkColor;
+  wCtx.fillStyle = inkColor;
   wCtx.lineWidth = W_INK * Math.min(w, h);
   wCtx.lineCap = 'round';
   wCtx.lineJoin = 'round';
@@ -1958,6 +2128,10 @@ function wPlay(file) {
   const canvas = document.getElementById('particles');
   const ctx = canvas.getContext('2d');
   let W, H, particles;
+  // Read once per theme change rather than every frame — a getComputedStyle call is not
+  // free at 60fps. The theme toggle calls this via the exposed setter when it flips.
+  let particleRGB = cssVar('--accent-rgb', '200,169,110');
+  window.wSetParticleRGB = rgb => { particleRGB = rgb; };
 
   function resize() {
     W = canvas.width = window.innerWidth;
@@ -1985,7 +2159,7 @@ function wPlay(file) {
     for (const p of particles) {
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(200,169,110,${p.a})`;
+      ctx.fillStyle = `rgba(${particleRGB},${p.a})`;
       ctx.fill();
       p.x += p.vx;
       p.y += p.vy;
@@ -2001,6 +2175,12 @@ function wPlay(file) {
   init();
   draw();
 })();
+
+// ── THEME INIT ──
+// Runs here, after every earlier `let`/`const` in the script has executed (including
+// WRITE's wCtx and this IIFE's own wSetParticleRGB), rather than right after applyTheme
+// was defined — see the comment above the matchMedia listener for why that ordering broke.
+applyTheme();
 
 // ── OFFLINE ──
 // The Listen section streams random speech from a remote dataset, so it is the one part
